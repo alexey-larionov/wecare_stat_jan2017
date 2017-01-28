@@ -1,0 +1,597 @@
+---
+title: "Filter variants by predicted effect, wecare sep2016"
+author: "Alexey Larionov"
+output: html_document
+params:
+  interim_data: "/scratch/medgen/scripts/wecare_stat_11.16/interim_data"
+---
+
+started: 01Mar2016  
+last updated: 22Dec2016
+
+# Criteria
+
+### Loss of function
+"splice_acceptor_variant", "splice_donor_variant", "stop_gain", "stop_lost", 
+"start_lost", "frameshift_variant" : 5,152 variants
+
+### Missense
+"deleterious" and "probably_damaging": 18,350 variants (dd)
+or
+"deleterious" and ("probably_damaging" or "possibly_damaging"): 27,754 variants (ddd)
+
+### ClinSig
+"likely_pathogenic", "risk_factor", "pathogenic", "association", "protective", 
+"drug_response": 793 variants
+
+### High AF in 1k (i.e. rare sequence versions in Ref Genome)
+EUR_AF>0.9 : 3,374 variants
+
+### Total retained
+**Variants:** 23,923 (33,238 ddd)
+**Genes:** 10,222 (11,812 ddd)
+~2.34 protein-affecting variants per gene (2.81 ddd)
+
+### Not included: "cosm" in Existing_Variation
+32,322 variants
+
+# start_section
+
+```{r start_section}
+
+# Start time
+Sys.time()
+
+# Do NOT clean-up at this stage
+#rm(list=ls()) # this would remove params object!
+graphics.off()
+
+# Read parameters
+interim_data_folder <- params$interim_data
+
+# Load libraries
+library(dplyr)
+library(reshape2) # for melt()
+library(ggplot2)
+
+# Set root working folder
+#library(knitr)
+#opts_knit$set(root.dir = "/scratch/medgen/scripts/wecare_stat_11.16/scripts")
+#setwd("/scratch/medgen/scripts/wecare_stat_11.16/scripts")
+
+```
+
+# load_data
+
+```{r load_data}
+
+# Remove params object to avoid interference with load() function
+rm(params)
+
+# Load data
+load(paste(interim_data_folder, "s03_update_phenotypes.RData", sep="/"))
+
+```
+
+# check_data
+
+```{r check_data}
+
+ls()
+
+dim(gt_wecare_pf.mx)
+class(gt_wecare_pf.mx)
+gt_wecare_pf.mx[1:5,1:5]
+
+dim(gt_nfe.mx)
+class(gt_nfe.mx)
+gt_nfe.mx[1:5,1:5]
+
+dim(phenotypes_wecare_pf.df)
+str(phenotypes_wecare_pf.df)
+phenotypes_wecare_pf.df[1:5,1:5]
+
+dim(variants.df)
+colnames(variants.df)
+variants.df[1:5,1:5]
+
+dim(kgen.df)
+colnames(kgen.df)
+kgen.df[1:5,1:5]
+
+dim(exac.df)
+colnames(exac.df)
+exac.df[1:5,1:5]
+
+# Check consistency of rownames and colnames
+sum(colnames(gt_wecare_pf.mx) != rownames(phenotypes_wecare_pf.df))
+sum(rownames(gt_wecare_pf.mx) != rownames(gt_nfe.mx))
+sum(rownames(gt_wecare_pf.mx) != rownames(variants.df))
+sum(rownames(gt_wecare_pf.mx) != rownames(kgen.df))
+sum(rownames(gt_wecare_pf.mx) != rownames(exac.df))
+
+# Check consistency of er1/pr1 and endocrine treatment
+# (note 2 er/pr-negatives treated with hormones)
+phenotypes_wecare_pf.df %>% 
+  filter(er==0 & hormone == 1) %>% 
+  select(wes_id, gwas_id, er, pr, hormone)
+
+```
+
+# explore_variants_annotations
+
+```{r explore_variants_annotations}
+
+# SIFT
+unique(as.vector(variants.df$SIFT_call))
+
+# PolyPhen
+unique(as.vector(variants.df$PolyPhen_call))
+
+#CLIN_SIG
+unique(unlist(strsplit(as.vector(variants.df$CLIN_SIG), split="\\&")))
+
+```
+
+# explore_variants_frequent_in_kgen_and_exac
+These are rare sequence versions slipped into reference genome (b37)
+
+```{r explore_variants_frequent_in_kgen_and_exac}
+
+x <- kgen.df  %>% filter(kgen.EUR_AF > 0.9) %>% select(SplitVarID) # 3,374
+y <- exac.df  %>% filter(exac_non_TCGA.AF > 0.9) %>% select(SplitVarID) # 2,613
+
+x <- as.character(x[,1])
+y <- as.character(y[,1])
+z <- intersect(x,y) # 2,461
+
+length(x)
+length(y)
+length(z)
+
+rm(x,y,z)
+
+```
+
+# Notes
+
+### Annotations seen in Wecare and NFE
+
+*SIFT:* "tolerated", "deleterious", "tolerated_low_confidence", "deleterious_low_confidence"  
+*PolyPhen:* "benign", "possibly_damaging", "probably_damaging", "unknown"  
+*CLIN_SIG:* "likely_benign", "benign", "likely_pathogenic", "risk_factor", "not_provided", 
+"uncertain_significance", "pathogenic", "association", "protective", "other", "drug_response"  
+I have also seen "confers_sensitivity" in CLIN_SIG for gastric cases
+*Somatic:* COSM in Existing_variation
+
+### Interpreting SIFT and PolyPhen scores (not used here)
+*SIFT:* the higher score the less deleterious  
+*PolyPhen:* the higher score the more damaging
+
+### Rare sequence versions in Ref genome
+There are ~2-3k of sites, which are anomaliously frequent (AF>0.9) in kgen and exac. 
+
+They should be rempoved because "variants" called in these sites represent sequence 
+versions common in humans, despite the misleading "low" MAFs in some databases. 
+
+# make_lof_index
+
+```{r make_lof_index}
+
+# --- Splice acceptor variants --- #
+
+splice_acceptor_variant <- grepl( "splice_acceptor_variant", variants.df$Consequence)
+sum(splice_acceptor_variant) # 438
+
+# mean count of alleles per case in nfe
+sav_nfe.mx <- gt_nfe.mx[splice_acceptor_variant,]
+sav_nfe.counts <- apply(sav_nfe.mx, 2, sum, na.rm=TRUE)
+sav_nfe.mean <- mean(sav_nfe.counts, na.rm=TRUE) # ~24
+rm(sav_nfe.mx, sav_nfe.counts)
+
+# mean count of alleles per case in wecare
+sav_wecare_pf.mx <- gt_wecare_pf.mx[splice_acceptor_variant,]
+sav_wecare_pf.counts <- apply(sav_wecare_pf.mx, 2, sum, na.rm=TRUE)
+sav_wecare_pf.mean <- mean(sav_wecare_pf.counts, na.rm=TRUE) # ~31
+rm(sav_wecare_pf.mx, sav_wecare_pf.counts)
+
+# --- Splice donor variants --- #
+
+splice_donor_variant <- grepl( "splice_donor_variant", variants.df$Consequence)
+sum(splice_donor_variant) # 638
+
+# mean count of alleles per case in nfe
+sdv_nfe.mx <- gt_nfe.mx[splice_donor_variant,]
+sdv_nfe.counts <- apply(sdv_nfe.mx, 2, sum, na.rm=TRUE)
+sdv_nfe.mean <- mean(sdv_nfe.counts, na.rm=TRUE) # ~16
+rm(sdv_nfe.mx, sdv_nfe.counts)
+
+# mean count of alleles per case in wecare
+sdv_wecare_pf.mx <- gt_wecare_pf.mx[splice_donor_variant,]
+sdv_wecare_pf.counts <- apply(sdv_wecare_pf.mx, 2, sum, na.rm=TRUE)
+sdv_wecare_pf.mean <- mean(sdv_wecare_pf.counts, na.rm=TRUE) # ~17
+rm(sdv_wecare_pf.mx, sdv_wecare_pf.counts)
+
+# --- Stop gains --- #
+
+stop_gain <- grepl( "stop_gain", variants.df$Consequence)
+sum(stop_gain) # 2240
+
+# mean count of alleles per case in nfe
+stogv_nfe.mx <- gt_nfe.mx[stop_gain,]
+stogv_nfe.counts <- apply(stogv_nfe.mx, 2, sum, na.rm=TRUE)
+stogv_nfe.mean <- mean(stogv_nfe.counts, na.rm=TRUE) # ~47
+rm(stogv_nfe.mx, stogv_nfe.counts)
+
+# mean count of alleles per case in wecare
+stogv_wecare_pf.mx <- gt_wecare_pf.mx[stop_gain,]
+stogv_wecare_pf.counts <- apply(stogv_wecare_pf.mx, 2, sum, na.rm=TRUE)
+stogv_wecare_pf.mean <- mean(stogv_wecare_pf.counts, na.rm=TRUE) # ~51
+rm(stogv_wecare_pf.mx, stogv_wecare_pf.counts)
+
+# --- Stop losts --- #
+
+stop_lost <- grepl( "stop_lost", variants.df$Consequence)
+sum(stop_lost) # 80
+
+# mean count of alleles per case in nfe
+stolv_nfe.mx <- gt_nfe.mx[stop_lost,]
+stolv_nfe.counts <- apply(stolv_nfe.mx, 2, sum, na.rm=TRUE)
+stolv_nfe.mean <- mean(stolv_nfe.counts, na.rm=TRUE) # ~13
+rm(stolv_nfe.mx, stolv_nfe.counts)
+
+# mean count of alleles per case in wecare
+stolv_wecare_pf.mx <- gt_wecare_pf.mx[stop_lost,]
+stolv_wecare_pf.counts <- apply(stolv_wecare_pf.mx, 2, sum, na.rm=TRUE)
+stolv_wecare_pf.mean <- mean(stolv_wecare_pf.counts, na.rm=TRUE) # ~16
+rm(stolv_wecare_pf.mx, stolv_wecare_pf.counts)
+
+# Interestingly, there are much less of stop_losts than stop_gains: 81 and 2277 respectively
+# This looks contraintuitive, suggesting that stop_losses may be under stronger evolutionary 
+# control than stop_gains?? 
+
+# --- Start losts --- #
+# Functional significance of start losses may be questioned. However, their 
+# total number is small, so they should not influence the analysis too much in any case. 
+# Could there be such thing as "Start gain" ?
+
+start_lost <- grepl( "start_lost", variants.df$Consequence)
+sum(start_lost) # 147
+
+# mean count of alleles per case in nfe
+stalv_nfe.mx <- gt_nfe.mx[start_lost,]
+stalv_nfe.counts <- apply(stalv_nfe.mx, 2, sum, na.rm=TRUE)
+stalv_nfe.mean <- mean(stalv_nfe.counts, na.rm=TRUE) # ~6
+rm(stalv_nfe.mx, stalv_nfe.counts)
+
+# mean count of alleles per case in wecare
+stalv_wecare_pf.mx <- gt_wecare_pf.mx[start_lost,]
+stalv_wecare_pf.counts <- apply(stalv_wecare_pf.mx, 2, sum, na.rm=TRUE)
+stalv_wecare_pf.mean <- mean(stalv_wecare_pf.counts, na.rm=TRUE) # ~8
+rm(stalv_wecare_pf.mx, stalv_wecare_pf.counts)
+
+# --- Frameshifts --- #
+
+frameshift_variant <- grepl( "frameshift_variant", variants.df$Consequence)
+sum(frameshift_variant) # 1660
+
+# mean count of alleles per case in nfe
+fsv_nfe.mx <- gt_nfe.mx[frameshift_variant,]
+fsv_nfe.counts <- apply(fsv_nfe.mx, 2, sum, na.rm=TRUE)
+fsv_nfe.mean <- mean(fsv_nfe.counts, na.rm=TRUE) # ~137
+rm(fsv_nfe.mx, fsv_nfe.counts)
+
+# mean count of alleles per case in wecare
+fsv_wecare_pf.mx <- gt_wecare_pf.mx[frameshift_variant,]
+fsv_wecare_pf.counts <- apply(fsv_wecare_pf.mx, 2, sum, na.rm=TRUE)
+fsv_wecare_pf.mean <- mean(fsv_wecare_pf.counts, na.rm=TRUE) # ~162
+rm(fsv_wecare_pf.mx, fsv_wecare_pf.counts)
+
+# --- all LoF-s --- #
+
+lof_all <- splice_acceptor_variant | splice_donor_variant | stop_gain | stop_lost | start_lost | frameshift_variant
+
+sum(lof_all) # 5,152
+
+# mean count of alleles per case in nfe
+lof_nfe.mx <- gt_nfe.mx[lof_all,]
+lof_nfe.counts <- apply(lof_nfe.mx, 2, sum, na.rm=TRUE)
+lof_nfe.mean <- mean(lof_nfe.counts, na.rm=TRUE) # ~238
+rm(lof_nfe.mx, lof_nfe.counts)
+
+# mean count of alleles per case in wecare
+lof_wecare_pf.mx <- gt_wecare_pf.mx[lof_all,]
+lof_wecare_pf.counts <- apply(lof_wecare_pf.mx, 2, sum, na.rm=TRUE)
+lof_wecare_pf.mean <- mean(lof_wecare_pf.counts, na.rm=TRUE) # ~279
+rm(lof_wecare_pf.mx, lof_wecare_pf.counts)
+
+# Clean-up
+rm(splice_acceptor_variant, splice_donor_variant, stop_gain, frameshift_variant, stop_lost, start_lost)
+
+```
+
+# compare_lofs_in_nfs_and_wecare_pf
+
+```{r compare_lofs_in_nfs_and_wecare_pf}
+
+# Summary table with LoFs per individual in nfe and wecare_pf
+lof_nfe_summary_counts <- c(sav_nfe.mean, sdv_nfe.mean, stogv_nfe.mean, 
+            stolv_nfe.mean, stalv_nfe.mean, fsv_nfe.mean, lof_nfe.mean)
+
+lof_wecare_pf_summary_counts <- c(sav_wecare_pf.mean, sdv_wecare_pf.mean, 
+        stogv_wecare_pf.mean, stolv_wecare_pf.mean, stalv_wecare_pf.mean, 
+        fsv_wecare_pf.mean, lof_wecare_pf.mean)
+
+lof_summary_counts <- rbind(lof_wecare_pf_summary_counts, lof_nfe_summary_counts)
+rownames(lof_summary_counts) <- c("wecare_pf", "nfe")
+colnames(lof_summary_counts) <- c("splice_acceptor", "splice_donior", "stop_gain", 
+                              "stop_lost", "start_lost", "frameshift", "all_LoFs")
+
+lof_summary_counts
+
+# Summary plot with LoFs per individual in nfe and wecare_pf
+lof_summary_counts.df <- as.data.frame(lof_summary_counts)
+lof_summary_counts.df <- cbind(rownames(lof_summary_counts.df), lof_summary_counts.df)
+colnames(lof_summary_counts.df)[1] <- "dataset"
+
+lof_summary_counts.m <- melt(lof_summary_counts.df, id.vars="dataset")
+ggplot(lof_summary_counts.m, aes(variable, value)) +
+  geom_bar(aes(fill = dataset), position = "dodge", stat="identity")
+
+# Clean-up
+rm(sav_nfe.mean, sdv_nfe.mean, stogv_nfe.mean, stolv_nfe.mean, stalv_nfe.mean, fsv_nfe.mean, 
+   sav_wecare_pf.mean, sdv_wecare_pf.mean, stogv_wecare_pf.mean, stolv_wecare_pf.mean, stalv_wecare_pf.mean, 
+   fsv_wecare_pf.mean, lof_nfe_summary_counts, lof_wecare_pf_summary_counts, 
+   lof_summary_counts, lof_summary_counts.df, lof_summary_counts.m)
+
+```
+
+# make_missense_index
+
+```{r make_missense_index}
+
+missense_all <- grepl( "missense_variant", variants.df$Consequence)
+sum(missense_all) # 109,219
+
+deleterious <- variants.df$SIFT_call == "deleterious"
+FALSE -> deleterious[is.na(deleterious)]
+sum(deleterious) # 38,350
+
+probably_damaging <- variants.df$PolyPhen_call == "probably_damaging"
+FALSE -> probably_damaging[is.na(probably_damaging)]
+sum(probably_damaging) # 25,007
+
+missense_dd <- deleterious & probably_damaging
+sum(missense_dd) # 18,350
+
+# mean count of missense-dd alleles per case in nfe
+missense_dd_nfe.mx <- gt_nfe.mx[missense_dd,]
+missense_dd_nfe.counts <- apply(missense_dd_nfe.mx, 2, sum, na.rm=TRUE)
+missense_dd_nfe.mean <- mean(missense_dd_nfe.counts, na.rm=TRUE)
+missense_dd_nfe.mean # ~367
+rm(missense_dd_nfe.mx, missense_dd_nfe.counts)
+
+# mean count of missense-dd alleles per case in wecare
+missense_dd_wecare_pf.mx <- gt_wecare_pf.mx[missense_dd,]
+missense_dd_wecare_pf.counts <- apply(missense_dd_wecare_pf.mx, 2, sum, na.rm=TRUE)
+missense_dd_wecare_pf.mean <- mean(missense_dd_wecare_pf.counts, na.rm=TRUE)
+missense_dd_wecare_pf.mean # ~380
+rm(missense_dd_wecare_pf.mx, missense_dd_wecare_pf.counts)
+
+# Clean-up
+rm(missense_all, deleterious, probably_damaging)
+
+```
+
+# make_clinsig_index
+
+ClinSig version as reported by VEP of Ensembl v83 (Jan2016)
+ClinVar is a better variant that may be used in future. 
+Note sums w/o na.rm=TRUE.
+
+```{r make_clinsig_index}
+
+clinsig_terms <- c("likely_pathogenic", "risk_factor", "pathogenic", "association", "protective", "drug_response")
+
+clinsig <- variants.df$CLIN_SIG %in% clinsig_terms
+sum(clinsig) # 793
+
+# mean count of alleles per case in nfe
+clinsig_nfe.mx <- gt_nfe.mx[clinsig,]
+clinsig_nfe.counts <- apply(clinsig_nfe.mx, 2, sum, na.rm=TRUE)
+clinsig_nfe.mean <- mean(clinsig_nfe.counts, na.rm=TRUE) 
+clinsig_nfe.mean # ~89
+rm(clinsig_nfe.mx, clinsig_nfe.counts)
+
+# mean count of alleles per case in wecare
+clinsig_wecare_pf.mx <- gt_wecare_pf.mx[clinsig,]
+clinsig_wecare_pf.counts <- apply(clinsig_wecare_pf.mx, 2, sum, na.rm=TRUE)
+clinsig_wecare_pf.mean <- mean(clinsig_wecare_pf.counts, na.rm=TRUE) 
+clinsig_wecare_pf.mean # 90
+rm(clinsig_wecare_pf.mx, clinsig_wecare_pf.counts)
+
+rm(clinsig_terms)
+
+```
+
+# make_frequent_in_kgen_index
+
+```{r make_frequent_in_kgen_index}
+
+kgen_frequent <- kgen.df$kgen.EUR_AF > 0.9
+FALSE -> kgen_frequent[is.na(kgen_frequent)]
+sum(kgen_frequent) # 3,374
+
+# mean count of alleles per case in nfe
+kgen_nfe.mx <- gt_nfe.mx[kgen_frequent,]
+kgen_nfe.counts <- apply(kgen_nfe.mx, 2, sum, na.rm=TRUE)
+kgen_nfe.mean <- mean(kgen_nfe.counts, na.rm=TRUE) 
+kgen_nfe.mean # ~5788
+rm(kgen_nfe.mx, kgen_nfe.counts)
+
+# mean count of alleles per case in wecare
+kgen_wecare_pf.mx <- gt_wecare_pf.mx[kgen_frequent,]
+kgen_wecare_pf.counts <- apply(kgen_wecare_pf.mx, 2, sum, na.rm=TRUE)
+kgen_wecare_pf.mean <- mean(kgen_wecare_pf.counts, na.rm=TRUE) 
+kgen_wecare_pf.mean # ~6362
+rm(kgen_wecare_pf.mx, kgen_wecare_pf.counts)
+
+rm(kgen_nfe.mean, kgen_wecare_pf.mean)
+
+```
+
+# make_cumulative_index
+
+```{r make_cumulative_index}
+
+protein_affecting_variants <- ( lof_all | missense_dd | clinsig ) & ( !kgen_frequent )
+sum(protein_affecting_variants) # 23,923
+sum(is.na(protein_affecting_variants)) # 0
+
+# mean count of alleles per case in nfe
+all_vars_nfe.mx <- gt_nfe.mx[protein_affecting_variants,]
+all_vars_nfe.counts <- apply(all_vars_nfe.mx, 2, sum, na.rm=TRUE)
+all_vars_nfe.mean <- mean(all_vars_nfe.counts, na.rm=TRUE) 
+all_vars_nfe.mean # ~615
+rm(all_vars_nfe.mx, all_vars_nfe.counts)
+
+# mean count of alleles per case in wecare
+all_vars_wecare_pf.mx <- gt_wecare_pf.mx[protein_affecting_variants,]
+all_vars_wecare_pf.counts <- apply(all_vars_wecare_pf.mx, 2, sum, na.rm=TRUE)
+all_vars_wecare_pf.mean <- mean(all_vars_wecare_pf.counts, na.rm=TRUE)
+all_vars_wecare_pf.mean # ~650
+rm(all_vars_wecare_pf.mx, all_vars_wecare_pf.counts)
+
+# Clean-up
+rm(lof_all, missense_dd, clinsig, kgen_frequent)
+
+```
+
+# make_somatic_index
+Not used for variants selection. 
+Just to have an idea about number of variants annotated in Cosmic
+
+```{r make_somatic_index}
+
+somatic <- grepl("COSM", variants.df$Existing_variation)
+sum(somatic) # 32,322
+rm(somatic)
+
+```
+
+# subset_data
+
+```{r subset_data}
+
+variants.df <- variants.df[protein_affecting_variants,]
+kgen.df <- kgen.df[protein_affecting_variants,]
+exac.df <- exac.df[protein_affecting_variants,]
+gt_nfe.mx <- gt_nfe.mx[protein_affecting_variants,]
+gt_wecare_pf.mx <- gt_wecare_pf.mx[protein_affecting_variants,]
+
+# Clean-up
+rm(protein_affecting_variants)
+  
+```
+
+# compare_variants_counts_in_nfs_and_wecare_pf
+
+```{r compare_variants_counts_in_nfs_and_wecare_pf}
+
+# Summary table with LoFs per individual in nfe and wecare_pf
+all_nfe_summary_counts <- c(lof_nfe.mean, missense_dd_nfe.mean, clinsig_nfe.mean, all_vars_nfe.mean)
+all_wecare_pf_summary_counts <- c(lof_wecare_pf.mean, missense_dd_wecare_pf.mean, clinsig_wecare_pf.mean, all_vars_wecare_pf.mean)
+
+all_summary_counts <- rbind(all_wecare_pf_summary_counts, all_nfe_summary_counts)
+rownames(all_summary_counts) <- c("wecare_pf", "nfe")
+colnames(all_summary_counts) <- c("lof", "missense_dd", "clinsig", "all")
+
+all_summary_counts
+
+# Summary plot with LoFs per individual in nfe and wecare_pf
+all_summary_counts.df <- as.data.frame(all_summary_counts)
+all_summary_counts.df <- cbind(rownames(all_summary_counts.df), all_summary_counts.df)
+colnames(all_summary_counts.df)[1] <- "dataset"
+
+all_summary_counts.m <- melt(all_summary_counts.df, id.vars="dataset")
+ggplot(all_summary_counts.m, aes(variable, value)) +
+  geom_bar(aes(fill = dataset), position = "dodge", stat="identity")
+
+# Clean-up
+rm(missense_dd_nfe.mean, missense_dd_wecare_pf.mean, all_vars_wecare_pf.mean, all_vars_nfe.mean)
+
+```
+
+# num_of_variants_per_gene
+
+```{r num_of_variants_per_gene}
+
+length(unique(variants.df$SYMBOL)) # 10,222
+
+x <- sort(table(as.vector(variants.df$SYMBOL)), decreasing = TRUE)
+x[1:200]
+
+y <- variants.df %>%  group_by(SYMBOL) %>% summarise(n())
+"vars_count" -> colnames(y)[2]
+hist(y$vars_count, main="Histogram for numbers of protein-affecting variants per gene", xlab="Variants count")
+mean(y$vars_count) # 2.34
+
+# Clean-up
+rm(x,y)
+
+```
+
+# data_summary
+
+```{r data_summary}
+
+dim(gt_wecare_pf.mx)
+class(gt_wecare_pf.mx)
+gt_wecare_pf.mx[1:5,1:5]
+
+dim(gt_nfe.mx)
+class(gt_nfe.mx)
+gt_nfe.mx[1:5,1:5]
+
+dim(kgen.df)
+colnames(kgen.df)
+kgen.df[1:5,1:5]
+
+dim(exac.df)
+colnames(exac.df)
+exac.df[1:5,1:5]
+
+dim(variants.df)
+str(variants.df)
+variants.df[1:5,1:5]
+
+dim(phenotypes_wecare_pf.df)
+str(phenotypes_wecare_pf.df)
+phenotypes_wecare_pf.df[1:5,1:5]
+
+# Check consistency of rownames and colnames
+sum(colnames(gt_wecare_pf.mx) != rownames(phenotypes_wecare_pf.df))
+sum(rownames(gt_wecare_pf.mx) != rownames(gt_nfe.mx))
+sum(rownames(gt_wecare_pf.mx) != rownames(kgen.df))
+sum(rownames(gt_wecare_pf.mx) != rownames(exac.df))
+sum(rownames(gt_wecare_pf.mx) != rownames(variants.df))
+
+```
+
+# save_data
+
+```{r save_data}
+
+save.image(paste(interim_data_folder, "/", "s04_filter_by_variant_effect.RData", sep=""))
+
+```
+
+# final_section
+
+```{r final_section}
+
+ls()
+sessionInfo()
+Sys.time()
+
+```

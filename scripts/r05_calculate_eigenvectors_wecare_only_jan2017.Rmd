@@ -1,0 +1,337 @@
+---
+title: "calculate_eigenvectors_wecare_only_jan2017"
+output: html_document
+---
+
+started: Alexey Larionov, 01Mar2016  
+last updated: Alexey Larionov, 27Jan2017
+
+# Summary
+
+1) Calcuilate eigenvectors and plot PCA1 vs PCA2 for 3 datasets:  
+
+- wecare  
+- wecare-nfe (overlap variants)  
+- wecare-nfe-50kgen (overlap variants)  
+
+2) Export data to text files to repeat the calculations in eigenstrat. 
+
+3) Import eigenstrat eigenvectors and compare with r-calclulated ones
+
+# start_section
+
+```{r start_section}
+
+# Time stamp
+Sys.time()
+
+# Folders
+setwd("/scratch/medgen/scripts/wecare_stat_01.17/scripts")
+interim_data_folder <- "/scratch/medgen/scripts/wecare_stat_01.17/interim_data"
+
+# Required libraries
+library(dplyr)
+library(ggplot2)
+library(plotly)
+
+```
+
+# load_data
+
+```{r load_data}
+
+load(paste(interim_data_folder, "r04_filter_cases_jan2017.RData", sep="/"))
+
+```
+
+# check_data
+
+```{r check_data}
+
+ls()
+
+dim(wecare_nfe_genotypes.mx)
+class(wecare_nfe_genotypes.mx)
+wecare_nfe_genotypes.mx[1:5,1:5]
+
+dim(wecare_nfe_phenotypes.df)
+str(wecare_nfe_phenotypes.df)
+wecare_nfe_phenotypes.df[1:5,1:5]
+
+dim(wecare_nfe_variants.df)
+colnames(wecare_nfe_variants.df)
+wecare_nfe_variants.df[1:5,1:5]
+
+dim(wecare_nfe_kgen.df)
+colnames(wecare_nfe_kgen.df)
+wecare_nfe_kgen.df[1:5,1:5]
+
+dim(wecare_nfe_exac.df)
+colnames(wecare_nfe_exac.df)
+wecare_nfe_exac.df[1:5,1:5]
+
+# Check consistency of colnames and rownames
+sum(colnames(wecare_nfe_genotypes.mx) != rownames(wecare_nfe_phenotypes.df))
+sum(rownames(wecare_nfe_genotypes.mx) != rownames(wecare_nfe_variants.df))
+sum(rownames(wecare_nfe_genotypes.mx) != rownames(wecare_nfe_kgen.df))
+sum(rownames(wecare_nfe_genotypes.mx) != rownames(wecare_nfe_exac.df))
+
+```
+
+# function_to_calculate_eigenvectors
+
+Implements procedure described by Price et al 2006 (PMID: 16862161)
+
+```{r function_to_calculate_eigenvectors}
+
+normalise_and_calculate_eigenvectors <- function(x) {
+  
+  # --- Center and normalise variants (rows) --- #
+  
+  # Center by mean
+  avg.rows <- apply(x, 1, mean, na.rm=TRUE)
+  x.c <- x - avg.rows
+  
+  # Normalise by sqrt(p(1-p)) where p~"posterior estimate of unobserved allele frequency"
+  # This is motivated by the fact that genetic drift per generation is proportional to this normalisation value (Patterson 2006)
+  # Also this makes each column to have same variance
+  # 
+  p.fnc <- function(x) (1 + sum(x, na.rm=TRUE)) / (2 + 2 * sum(!is.na(x)))
+  p <- apply(x, 1, p.fnc)
+  eaf <- sqrt(p*(1-p))
+  x.cn <- x.c/eaf
+  
+  # Substitute NAs to zeros
+  0 -> x.cn[is.na(x)]
+  
+  # --- Calculate eigenvectors of covariance matrix of cases --- #
+  
+  cov.mx <- cov(x.cn)
+  eig <- eigen(cov.mx) # eigenvectors in columns
+  
+  return(eig)
+
+}
+
+```
+
+# make_wecare_only_subset_of_data
+
+```{r make_wecare_only_subset_of_data}
+
+wecare_cases <- as.vector(wecare_nfe_phenotypes.df[wecare_nfe_phenotypes.df$cc!=-1,"wes_id"])
+length(wecare_cases)
+
+wecare_phenotypes.df <- wecare_nfe_phenotypes.df[wecare_cases,]
+dim(wecare_phenotypes.df)
+
+wecare_genotypes.mx <- wecare_nfe_genotypes.mx[,wecare_cases]
+dim(wecare_genotypes.mx)
+
+wecare_variants <- apply(wecare_genotypes.mx, 1, sum, na.rm=TRUE) > 0
+sum(wecare_variants) # 226,722
+
+wecare_genotypes.mx <- wecare_genotypes.mx[wecare_variants,]
+wecare_variants.df <- wecare_nfe_variants.df[wecare_variants,]
+wecare_exac.df <- wecare_nfe_exac.df[wecare_variants,]
+wecare_kgen.df <- wecare_nfe_kgen.df[wecare_variants,]
+
+rm(wecare_cases, wecare_variants)
+
+```
+
+# calculate_eigenvectors_for_wecare
+
+```{r calculate_eigenvectors_for_wecare}
+
+# --- Calculate eigenvectors --- #
+
+wecare_eigen <- normalise_and_calculate_eigenvectors(wecare_genotypes.mx)
+
+wecare_eigenvectors.df <- as.data.frame(wecare_eigen$vectors) # eigenvectors in columns
+wecare_eigenvalues <- wecare_eigen$values
+
+# --- Plot eig1 vs eig2 --- #
+
+# Prepare cases lables
+cases_labels <- as.vector(wecare_phenotypes.df$cc)
+"CBC" -> cases_labels[cases_labels==1]
+"UBC" -> cases_labels[cases_labels==0]
+
+# Prepare colour scale
+colours <- c("UBC" = "BLUE", "CBC" = "RED")
+userColourScale <- scale_colour_manual(values=colours)
+
+# Non-interactive plot
+ggplot(wecare_eigenvectors.df, aes(V1,V2)) +
+  geom_point(aes(colour=cases_labels, fill=cases_labels)) + 
+  labs(title="wecare (480 x 226,722)", x ="eigenvector1", y = "eigenvector2") +
+  userColourScale
+
+# Interactive plot
+cases_IDs <- as.vector(wecare_phenotypes.df$merged_id)
+
+g <- ggplot(wecare_eigenvectors.df, aes(V1,V2)) +
+  geom_point(aes(colour=cases_labels, fill=cases_labels, text = cases_IDs)) + 
+  labs(title="wecare (480 x 226,722)", x ="eigenvector1", y = "eigenvector2") +
+  userColourScale
+
+ggplotly(g)
+
+# --- Clean-up --- #
+
+rm(wecare_eigenvectors.df, cases_IDs, cases_labels, colours, userColourScale, 
+   wecare_eigenvalues, g, normalise_and_calculate_eigenvectors)
+
+```
+
+# export_wecare_to_EIGENSTRAT_format
+
+```{r export_wecare_to_EIGENSTRAT_format}
+
+# --- make snp file --- #
+
+# Extract data from variants table
+wecare_snp.df <- wecare_variants.df %>% 
+  mutate(morgan = POS / 1000000) %>%  
+  select(SplitVarID, CHROM, morgan, POS, REF, ALT)
+
+# Recode CRHOM data
+summary(wecare_snp.df$CHROM)
+
+str(wecare_snp.df)
+wecare_snp.df$CHROM <- as.vector(wecare_snp.df$CHROM)
+str(wecare_snp.df)
+
+"23" -> wecare_snp.df[wecare_snp.df$CHROM == "X", "CHROM"]
+"24" -> wecare_snp.df[wecare_snp.df$CHROM == "Y", "CHROM"]
+"90" -> wecare_snp.df[wecare_snp.df$CHROM == "MT", "CHROM"]
+
+wecare_snp.df$CHROM <- as.factor(wecare_snp.df$CHROM)
+summary(wecare_snp.df$CHROM)
+
+# Write file (tab-separated)
+write.table(wecare_snp.df, 
+            paste(interim_data_folder, "wecare.snp", sep="/"), 
+            quote=FALSE, sep="\t", 
+            row.names=FALSE, col.names=FALSE) 
+
+# --- make geno file --- #
+
+# Get data from genotypes matrix
+wecare_geno.mx <- wecare_genotypes.mx
+
+# Recode NA
+9 -> wecare_geno.mx[is.na(wecare_geno.mx)] # NA is coded as 9
+
+# Write file (no delimiters)
+write.table(wecare_geno.mx, 
+            paste(interim_data_folder, "wecare.geno", sep="/"),             
+            quote=FALSE, sep="", 
+            row.names=FALSE, col.names=FALSE)
+
+# --- make ind file --- #
+
+# Samples column
+samples <- as.vector(wecare_phenotypes.df$wes_id)
+
+# Gender column
+gender <- rep("F", length(samples)) # all females
+
+# Population/Group column
+group <- as.vector(wecare_phenotypes.df$cc)
+"UBC" -> group[group == 0]
+"CBC" -> group[group == 1]
+
+# Get together
+wecare_ind.mx <- cbind(samples, gender, group)
+
+# Write file (tab-separated) 
+write.table(wecare_ind.mx, 
+            paste(interim_data_folder, "wecare.ind", sep="/"),
+            quote=FALSE, sep="\t", 
+            row.names=FALSE, col.names=FALSE)
+
+rm(wecare_snp.df, wecare_geno.mx, wecare_ind.mx, samples, gender, group)
+
+```
+
+# data_summary
+
+```{r data_summary}
+
+ls()
+
+# wecare nfe
+
+dim(wecare_nfe_genotypes.mx)
+class(wecare_nfe_genotypes.mx)
+wecare_nfe_genotypes.mx[1:5,1:5]
+
+dim(wecare_nfe_phenotypes.df)
+str(wecare_nfe_phenotypes.df)
+wecare_nfe_phenotypes.df[1:5,1:5]
+
+dim(wecare_nfe_variants.df)
+colnames(wecare_nfe_variants.df)
+wecare_nfe_variants.df[1:5,1:5]
+
+dim(wecare_nfe_kgen.df)
+colnames(wecare_nfe_kgen.df)
+wecare_nfe_kgen.df[1:5,1:5]
+
+dim(wecare_nfe_exac.df)
+colnames(wecare_nfe_exac.df)
+wecare_nfe_exac.df[1:5,1:5]
+
+sum(colnames(wecare_nfe_genotypes.mx) != rownames(wecare_nfe_phenotypes.df))
+sum(rownames(wecare_nfe_genotypes.mx) != rownames(wecare_nfe_variants.df))
+sum(rownames(wecare_nfe_genotypes.mx) != rownames(wecare_nfe_kgen.df))
+sum(rownames(wecare_nfe_genotypes.mx) != rownames(wecare_nfe_exac.df))
+
+# wecare only
+
+dim(wecare_genotypes.mx)
+class(wecare_genotypes.mx)
+wecare_genotypes.mx[1:5,1:5]
+
+dim(wecare_phenotypes.df)
+str(wecare_phenotypes.df)
+wecare_phenotypes.df[1:5,1:5]
+
+dim(wecare_variants.df)
+colnames(wecare_variants.df)
+wecare_variants.df[1:5,1:5]
+
+dim(wecare_kgen.df)
+colnames(wecare_kgen.df)
+wecare_kgen.df[1:5,1:5]
+
+dim(wecare_exac.df)
+colnames(wecare_exac.df)
+wecare_exac.df[1:5,1:5]
+
+sum(colnames(wecare_genotypes.mx) != rownames(wecare_phenotypes.df))
+sum(rownames(wecare_genotypes.mx) != rownames(wecare_variants.df))
+sum(rownames(wecare_genotypes.mx) != rownames(wecare_kgen.df))
+sum(rownames(wecare_genotypes.mx) != rownames(wecare_exac.df))
+
+```
+
+# save_data
+
+```{r save_data}
+
+save.image(paste(interim_data_folder, "r05_calculate_egenvectors_wecare_only_jan2017.RData", sep="/"))
+
+```
+
+# final_section
+
+```{r final_section}
+
+ls()
+sessionInfo()
+Sys.time()
+
+```

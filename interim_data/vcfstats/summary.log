@@ -1,0 +1,523 @@
+This is pdfTeXk, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=pdflatex 2016.10.25)  27 JAN 2017 23:48
+entering extended mode
+ %&-line parsing enabled.
+**summary.tex
+(./summary.tex
+LaTeX2e <2005/12/01>
+Babel <v3.8h> and hyphenation patterns for english, usenglishmax, dumylang, noh
+yphenation, arabic, basque, bulgarian, coptic, welsh, czech, slovak, german, ng
+erman, danish, esperanto, spanish, catalan, galician, estonian, farsi, finnish,
+ french, greek, monogreek, ancientgreek, croatian, hungarian, interlingua, ibyc
+us, indonesian, icelandic, italian, latin, mongolian, dutch, norsk, polish, por
+tuguese, pinyin, romanian, russian, slovenian, uppersorbian, serbian, swedish, 
+turkish, ukenglish, ukrainian, loaded.
+
+(/usr/share/texmf/tex/latex/memoir/memoir.cls
+Document Class: memoir 2005/09/25 v1.618 configurable document class
+\onelineskip=\skip41
+\lxvchars=\skip42
+\xlvchars=\skip43
+\@memcnta=\count79
+\stockheight=\skip44
+\stockwidth=\skip45
+\trimtop=\skip46
+\trimedge=\skip47
+(/usr/share/texmf/tex/latex/memoir/mem17.clo
+File: mem17.clo 2004/03/12 v0.2 memoir class 17pt size option
+)
+\spinemargin=\skip48
+\foremargin=\skip49
+\uppermargin=\skip50
+\lowermargin=\skip51
+\headdrop=\skip52
+\normalrulethickness=\skip53
+\headwidth=\skip54
+\c@storedpagenumber=\count80
+\thanksmarkwidth=\skip55
+\thanksmarksep=\skip56
+\droptitle=\skip57
+\abstitleskip=\skip58
+\absleftindent=\skip59
+\abs@leftindent=\dimen102
+\absrightindent=\skip60
+\absparindent=\skip61
+\absparsep=\skip62
+\c@part=\count81
+\c@chapter=\count82
+\c@section=\count83
+\c@subsection=\count84
+\c@subsubsection=\count85
+\c@paragraph=\count86
+\c@subparagraph=\count87
+\beforechapskip=\skip63
+\midchapskip=\skip64
+\afterchapskip=\skip65
+\chapindent=\skip66
+\bottomsectionskip=\skip67
+\secindent=\skip68
+\beforesecskip=\skip69
+\aftersecskip=\skip70
+\subsecindent=\skip71
+\beforesubsecskip=\skip72
+\aftersubsecskip=\skip73
+\subsubsecindent=\skip74
+\beforesubsubsecskip=\skip75
+\aftersubsubsecskip=\skip76
+\paraindent=\skip77
+\beforeparaskip=\skip78
+\afterparaskip=\skip79
+\subparaindent=\skip80
+\beforesubparaskip=\skip81
+\aftersubparaskip=\skip82
+\pfbreakskip=\skip83
+\c@@ppsavesec=\count88
+\c@@ppsaveapp=\count89
+\ragrparindent=\dimen103
+\parsepi=\skip84
+\topsepi=\skip85
+\itemsepi=\skip86
+\parsepii=\skip87
+\topsepii=\skip88
+\topsepiii=\skip89
+\m@msavetopsep=\skip90
+\m@msavepartopsep=\skip91
+\@enLab=\toks14
+\c@vslineno=\count90
+\c@poemline=\count91
+\c@modulo@vs=\count92
+\vleftskip=\skip92
+\vrightskip=\skip93
+\stanzaskip=\skip94
+\versewidth=\skip95
+\vgap=\skip96
+\vindent=\skip97
+\vleftmargin=\dimen104
+\c@verse=\count93
+\c@chrsinstr=\count94
+\beforepoemtitleskip=\skip98
+\afterpoemtitleskip=\skip99
+\c@poem=\count95
+\beforePoemTitleskip=\skip100
+\midPoemTitleskip=\skip101
+\afterPoemTitleskip=\skip102
+\col@sep=\dimen105
+\extrarowheight=\dimen106
+\NC@list=\toks15
+\extratabsurround=\skip103
+\backup@length=\skip104
+\TX@col@width=\dimen107
+\TX@old@table=\dimen108
+\TX@old@col=\dimen109
+\TX@target=\dimen110
+\TX@delta=\dimen111
+\TX@cols=\count96
+\TX@ftn=\toks16
+\heavyrulewidth=\dimen112
+\lightrulewidth=\dimen113
+\cmidrulewidth=\dimen114
+\belowrulesep=\dimen115
+\belowbottomsep=\dimen116
+\aboverulesep=\dimen117
+\abovetopsep=\dimen118
+\cmidrulesep=\dimen119
+\cmidrulekern=\dimen120
+\defaultaddspace=\dimen121
+\@cmidla=\count97
+\@cmidlb=\count98
+\@aboverulesep=\dimen122
+\@belowrulesep=\dimen123
+\@thisruleclass=\count99
+\@lastruleclass=\count100
+\@thisrulewidth=\dimen124
+\ctableftskip=\skip105
+\ctabrightskip=\skip106
+\abovecolumnspenalty=\count101
+\@linestogo=\count102
+\@cellstogo=\count103
+\@cellsincolumn=\count104
+\crtok=\toks17
+\@mincolumnwidth=\dimen125
+\c@newflo@tctr=\count105
+\@contcwidth=\skip107
+\@contindw=\skip108
+\abovecaptionskip=\skip109
+\belowcaptionskip=\skip110
+\subfloattopskip=\skip111
+\subfloatcapskip=\skip112
+\subfloatcaptopadj=\skip113
+\subfloatbottomskip=\skip114
+\subfloatlabelskip=\skip115
+\subfloatcapmargin=\dimen126
+\c@@contsubnum=\count106
+\beforeepigraphskip=\skip116
+\afterepigraphskip=\skip117
+\epigraphwidth=\skip118
+\epigraphrule=\skip119
+LaTeX Info: Redefining \em on input line 4895.
+LaTeX Info: Redefining \emph on input line 4903.
+\tocentryskip=\skip120
+\tocbaseline=\skip121
+\cftparskip=\skip122
+\cftbeforepartskip=\skip123
+\cftpartindent=\skip124
+\cftpartnumwidth=\skip125
+\cftbeforechapterskip=\skip126
+\cftchapterindent=\skip127
+\cftchapternumwidth=\skip128
+\cftbeforesectionskip=\skip129
+\cftsectionindent=\skip130
+\cftsectionnumwidth=\skip131
+\cftbeforesubsectionskip=\skip132
+\cftsubsectionindent=\skip133
+\cftsubsectionnumwidth=\skip134
+\cftbeforesubsubsectionskip=\skip135
+\cftsubsubsectionindent=\skip136
+\cftsubsubsectionnumwidth=\skip137
+\cftbeforeparagraphskip=\skip138
+\cftparagraphindent=\skip139
+\cftparagraphnumwidth=\skip140
+\cftbeforesubparagraphskip=\skip141
+\cftsubparagraphindent=\skip142
+\cftsubparagraphnumwidth=\skip143
+\c@maxsecnumdepth=\count107
+\bibindent=\dimen127
+\bibitemsep=\skip144
+\indexcolsep=\skip145
+\indexrule=\skip146
+\indexmarkstyle=\toks18
+\@indexbox=\insert233
+\glossarycolsep=\dimen128
+\glossaryrule=\dimen129
+\sideparvshift=\skip147
+\sideins=\insert232
+\sidebarhsep=\skip148
+\sidebarvsep=\skip149
+\sidebarwidth=\skip150
+\footmarkwidth=\skip151
+\footmarksep=\skip152
+\footparindent=\skip153
+\footinsdim=\skip154
+\footinsv@r=\insert231
+\@mpfootinsv@r=\insert230
+\m@m@k=\count108
+\m@m@h=\dimen130
+\m@mipn@skip=\skip155
+\c@sheetsequence=\count109
+\c@lastsheet=\count110
+\c@lastpage=\count111
+\every@verbatim=\toks19
+\afterevery@verbatim=\toks20
+\verbatim@line=\toks21
+\tab@position=\count112
+\verbatim@in@stream=\read1
+\verbatimindent=\skip156
+\verbatim@out=\write3
+\bvboxsep=\skip157
+\c@bvlinectr=\count113
+\bvnumlength=\skip158
+\FrameRule=\dimen131
+\FrameSep=\dimen132
+\c@cp@cntr=\count114
+LaTeX Info: Redefining \: on input line 8292.
+LaTeX Info: Redefining \! on input line 8294.
+\c@ism@mctr=\count115
+\c@xsm@mctr=\count116
+\c@csm@mctr=\count117
+\c@ksm@mctr=\count118
+\c@xksm@mctr=\count119
+\c@cksm@mctr=\count120
+\c@msm@mctr=\count121
+\c@xmsm@mctr=\count122
+\c@cmsm@mctr=\count123
+\c@bsm@mctr=\count124
+\c@workm@mctr=\count125
+\c@figure=\count126
+\c@lofdepth=\count127
+\c@lofdepth=\count127
+\cftbeforefigureskip=\skip159
+\cftfigureindent=\skip160
+\cftfigurenumwidth=\skip161
+\c@table=\count127
+\c@lotdepth=\count128
+\c@lotdepth=\count128
+\cftbeforetableskip=\skip162
+\cfttableindent=\skip163
+\cfttablenumwidth=\skip164
+Package abstract emulated by memoir.
+Package appendix emulated by memoir.
+Package array emulated by memoir.
+Package booktabs emulated by memoir.
+Package ccaption emulated by memoir.
+Package chngcntr emulated by memoir.
+Package chngpage emulated by memoir.
+Package crop emulated by memoir.
+Package dcolumn emulated by memoir.
+Package delarray emulated by memoir.
+Package enumerate emulated by memoir.
+Package epigraph emulated by memoir.
+Package framed emulated by memoir.
+Package ifmtarg emulated by memoir.
+Package ifpdf emulated by memoir.
+Package index emulated by memoir.
+Package makeidx emulated by memoir.
+Package moreverb emulated by memoir.
+Package needspace emulated by memoir.
+Package newfile emulated by memoir.
+Package nextpage emulated by memoir.
+Package patchcmd emulated by memoir.
+Package shortvrb emulated by memoir.
+Package showidx emulated by memoir.
+Package tabularx emulated by memoir.
+Package titleref emulated by memoir.
+Package titling emulated by memoir.
+Package tocbibind emulated by memoir.
+Package tocloft emulated by memoir.
+Package verbatim emulated by memoir.
+Package verse emulated by memoir.
+
+(/usr/share/texmf/tex/latex/memoir/mempatch.sty
+File: mempatch.sty 2007/01/22 v4.8 Patches for memoir class v1.618
+\m@mscap@capbox=\box26
+\m@mscap@fbox=\box27
+\sidecapsep=\dimen133
+\sidecapwidth=\dimen134
+\m@m@tempdima=\dimen135
+\m@mscapraise=\dimen136
+\sidecapraise=\dimen137
+\m@mscapmainwidth=\dimen138
+\m@mscaplkern=\dimen139
+\c@book=\count128
+\cftbeforebookskip=\skip165
+\cftbookindent=\dimen140
+\cftbooknumwidth=\dimen141
+\c@pagenote=\count129
+Package pagenote emulated by memoir.
+\cftbeforesectionskip=\skip166
+\cftsectionindent=\skip167
+\cftsectionnumwidth=\skip168
+\cftbeforesubsectionskip=\skip169
+\cftsubsectionindent=\skip170
+\cftsubsectionnumwidth=\skip171
+\cftbeforesubsubsectionskip=\skip172
+\cftsubsubsectionindent=\skip173
+\cftsubsubsectionnumwidth=\skip174
+\cftbeforeparagraphskip=\skip175
+\cftparagraphindent=\skip176
+\cftparagraphnumwidth=\skip177
+\cftbeforesubparagraphskip=\skip178
+\cftsubparagraphindent=\skip179
+\cftsubparagraphnumwidth=\skip180
+\cftbeforefigureskip=\skip181
+\cftfigureindent=\skip182
+\cftfigurenumwidth=\skip183
+\cftbeforetableskip=\skip184
+\cfttableindent=\skip185
+\cfttablenumwidth=\skip186
+\everylistparindent=\dimen142
+Package setspace emulated by memoir.
+\memPD=\dimen143
+Package parskip emulated by memoir.
+\m@mabparskip=\skip187
+\itemsepii=\skip188
+\itemsepiii=\skip189
+\partopsepiii=\skip190
+\sidebartopsep=\skip191
+\c@lofdepth=\count130
+\c@lotdepth=\count131
+))
+
+******************************************************
+Stock height and width: 540.60236pt by 722.69981pt
+Top and edge trims: 0.0pt and 0.0pt
+Page height and width: 540.60236pt by 722.69981pt
+Text height and width: 455.24411pt by 665.0pt
+Spine and edge margins: 28.45274pt and 28.45274pt
+Upper and lower margins: 42.67912pt and 42.67912pt
+Headheight and headsep: 2.84526pt and 2.84526pt
+Footskip: 28.45274pt
+Columnsep and columnseprule: 10.0pt and 0.0pt
+Marginparsep and marginparwidth: 2.84526pt and 2.84526pt
+Sidecapsep and sidecapwidth: 7.0pt and 51.0pt
+Sidebarhsep and sidebarwidth: 7.0pt and 51.0pt
+Sidebarvsep and sidebartopsep: 22.0pt and 0.0pt
+Sidebarheight: 543.39993pt
+******************************************************
+
+(/usr/share/texmf/tex/latex/psnfss/charter.sty
+Package: charter 2005/04/12 PSNFSS-v9.2a (P.Dyballa) 
+)
+(/usr/share/texmf/tex/latex/graphics/graphicx.sty
+Package: graphicx 1999/02/16 v1.0f Enhanced LaTeX Graphics (DPC,SPQR)
+
+(/usr/share/texmf/tex/latex/graphics/keyval.sty
+Package: keyval 1999/03/16 v1.13 key=value parser (DPC)
+\KV@toks@=\toks22
+)
+(/usr/share/texmf/tex/latex/graphics/graphics.sty
+Package: graphics 2006/02/20 v1.0o Standard LaTeX Graphics (DPC,SPQR)
+
+(/usr/share/texmf/tex/latex/graphics/trig.sty
+Package: trig 1999/03/16 v1.09 sin cos tan (DPC)
+)
+(/usr/share/texmf/tex/latex/config/graphics.cfg
+File: graphics.cfg 2007/01/18 v1.5 graphics configuration of teTeX/TeXLive
+)
+Package graphics Info: Driver file: pdftex.def on input line 90.
+
+(/usr/share/texmf/tex/latex/pdftex-def/pdftex.def
+File: pdftex.def 2007/01/08 v0.04d Graphics/color for pdfTeX
+\Gread@gobject=\count132
+))
+\Gin@req@height=\dimen144
+\Gin@req@width=\dimen145
+)
+(/usr/share/texmf/tex/latex/multirow/multirow.sty
+\bigstrutjot=\dimen146
+)
+(/usr/share/texmf/tex/latex/xcolor/xcolor.sty
+Package: xcolor 2007/01/21 v2.11 LaTeX color extensions (UK)
+
+(/usr/share/texmf/tex/latex/config/color.cfg
+File: color.cfg 2007/01/18 v1.5 color configuration of teTeX/TeXLive
+)
+Package xcolor Info: Driver file: pdftex.def on input line 225.
+
+(/usr/share/texmf/tex/latex/colortbl/colortbl.sty
+Package: colortbl 2001/02/13 v0.1j Color table columns (DPC)
+\everycr=\toks23
+\minrowclearance=\skip192
+)
+\rownum=\count133
+Package xcolor Info: Model `cmy' substituted by `cmy0' on input line 1337.
+Package xcolor Info: Model `hsb' substituted by `rgb' on input line 1341.
+Package xcolor Info: Model `RGB' extended on input line 1353.
+Package xcolor Info: Model `HTML' substituted by `rgb' on input line 1355.
+Package xcolor Info: Model `Hsb' substituted by `hsb' on input line 1356.
+Package xcolor Info: Model `tHsb' substituted by `hsb' on input line 1357.
+Package xcolor Info: Model `HSB' substituted by `hsb' on input line 1358.
+Package xcolor Info: Model `Gray' substituted by `gray' on input line 1359.
+Package xcolor Info: Model `wave' substituted by `hsb' on input line 1360.
+)
+No file summary.aux.
+\openout1 = `summary.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 58.
+LaTeX Font Info:    ... okay on input line 58.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 58.
+LaTeX Font Info:    ... okay on input line 58.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 58.
+LaTeX Font Info:    ... okay on input line 58.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 58.
+LaTeX Font Info:    ... okay on input line 58.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 58.
+LaTeX Font Info:    ... okay on input line 58.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 58.
+LaTeX Font Info:    ... okay on input line 58.
+LaTeX Font Info:    Try loading font information for OT1+bch on input line 58.
+(/usr/share/texmf/tex/latex/psnfss/ot1bch.fd
+File: ot1bch.fd 2004/10/18 font definitions for OT1/bch.
+)
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <14.4> on input line 104.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <7> on input line 104.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <17.28> on input line 104.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <12> on input line 104.
+
+Overfull \vbox (19.15474pt too high) has occurred while \output is active []
+
+
+[1
+
+{/usr/share/texmf/fonts/map/pdftex/updmap/pdftex.map}]
+<counts_by_af.snps.pdf, id=8, 625.96065pt x 199.1693pt>
+File: counts_by_af.snps.pdf Graphic file (type pdf)
+
+<use counts_by_af.snps.pdf>
+<counts_by_af.indels.pdf, id=9, 625.96065pt x 199.1693pt>
+File: counts_by_af.indels.pdf Graphic file (type pdf)
+
+<use counts_by_af.indels.pdf>
+Overfull \vbox (19.15474pt too high) has occurred while \output is active []
+
+
+[2 <./counts_by_af.snps.pdf
+
+pdfTeX warning: pdflatex (file ./counts_by_af.snps.pdf): PDF inclusion: Page Gr
+oup detected which pdfTeX can't handle. Ignoring it.
+> <./counts_by_af.indels.pdf
+
+pdfTeX warning: pdflatex (file ./counts_by_af.indels.pdf): PDF inclusion: Page 
+Group detected which pdfTeX can't handle. Ignoring it.
+>] <tstv_by_af.0.pdf, id=93, 312.98033pt x 284.52756pt>
+File: tstv_by_af.0.pdf Graphic file (type pdf)
+ <use tstv_by_af.0.pdf>
+Overfull \vbox (19.15474pt too high) has occurred while \output is active []
+
+
+[3 <./tstv_by_af.0.pdf
+
+pdfTeX warning: pdflatex (file ./tstv_by_af.0.pdf): PDF inclusion: Page Group d
+etected which pdfTeX can't handle. Ignoring it.
+>] <tstv_by_qual.0.pdf, id=137, 312.98033pt x 284.52756pt>
+File: tstv_by_qual.0.pdf Graphic file (type pdf)
+
+<use tstv_by_qual.0.pdf>
+Overfull \vbox (19.15474pt too high) has occurred while \output is active []
+
+
+[4 <./tstv_by_qual.0.pdf
+
+pdfTeX warning: pdflatex (file ./tstv_by_qual.0.pdf): PDF inclusion: Page Group
+ detected which pdfTeX can't handle. Ignoring it.
+>] <indels.0.pdf, id=187, 312.98033pt x 284.52756pt>
+File: indels.0.pdf Graphic file (type pdf)
+ <use indels.0.pdf>
+Overfull \vbox (19.15474pt too high) has occurred while \output is active []
+
+
+[5 <./indels.0.pdf
+
+pdfTeX warning: pdflatex (file ./indels.0.pdf): PDF inclusion: Page Group detec
+ted which pdfTeX can't handle. Ignoring it.
+>] <depth.0.pdf, id=221, 312.98033pt x 284.52756pt>
+File: depth.0.pdf Graphic file (type pdf)
+ <use depth.0.pdf>
+Overfull \vbox (19.15474pt too high) has occurred while \output is active []
+
+
+[6 <./depth.0.pdf
+
+pdfTeX warning: pdflatex (file ./depth.0.pdf): PDF inclusion: Page Group detect
+ed which pdfTeX can't handle. Ignoring it.
+>] <substitutions.0.pdf, id=269, 312.98033pt x 284.52756pt>
+File: substitutions.0.pdf Graphic file (type pdf)
+
+<use substitutions.0.pdf>
+Overfull \vbox (19.15474pt too high) has occurred while \output is active []
+
+
+[7 <./substitutions.0.pdf
+
+pdfTeX warning: pdflatex (file ./substitutions.0.pdf): PDF inclusion: Page Grou
+p detected which pdfTeX can't handle. Ignoring it.
+>] (./summary.aux) ) 
+Here is how much of TeX's memory you used:
+ 3696 strings out of 256214
+ 46621 string characters out of 1916999
+ 137314 words of memory out of 1500000
+ 7012 multiletter control sequences out of 10000+200000
+ 13642 words of font info for 33 fonts, out of 1200000 for 2000
+ 645 hyphenation exceptions out of 8191
+ 43i,11n,35p,186b,274s stack positions out of 5000i,500n,6000p,200000b,15000s
+{/usr/share/texmf/fonts/enc/dvips/base/8r.enc}</usr/share/t
+exmf/fonts/type1/bitstrea/charter/bchr8a.pfb></usr/share/texmf/fonts/type1/blue
+sky/cm/cmsy10.pfb></usr/share/texmf/fonts/type1/bluesky/cm/cmtt12.pfb>
+Output written on summary.pdf (7 pages, 128644 bytes).
+PDF statistics:
+ 313 PDF objects out of 1000 (max. 8388607)
+ 0 named destinations out of 1000 (max. 131072)
+ 36 words of extra memory for PDF output out of 10000 (max. 10000000)
+

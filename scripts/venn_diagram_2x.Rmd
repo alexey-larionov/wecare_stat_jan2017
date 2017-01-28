@@ -1,0 +1,29 @@
+---
+title: "venn_diagram_2x"
+output: html_document
+---
+
+http://stackoverflow.com/questions/8713994/venn-diagram-proportional-and-color-shading-with-semi-transparency 
+
+```{r}
+
+category_a <- "wecare_nfe"
+count_a <- 343824
+
+category_b <- "kgen50"
+count_b <- 18493739
+
+union <- 18677505
+
+overlap <- count_a + count_b - union
+
+library(VennDiagram)
+grid.newpage();
+draw.pairwise.venn(count_a, count_b, overlap, 
+                   category=c(paste(category_a, "\n", count_a, sep=""),
+                              paste(category_b, "\n", count_b, sep="")), 
+                   fill = c("red", "green"), alpha = c(0.3, 0.3), 
+                   cex = 2, cat.fontface = 4, fontfamily =3)
+
+```
+

@@ -1,0 +1,56 @@
+INFO  23:22:30,227 HelpFormatter - ---------------------------------------------------------------------------------- 
+INFO  23:22:30,240 HelpFormatter - The Genome Analysis Toolkit (GATK) v3.6-0-g89b7209, Compiled 2016/06/01 22:27:29 
+INFO  23:22:30,240 HelpFormatter - Copyright (c) 2010-2016 The Broad Institute 
+INFO  23:22:30,240 HelpFormatter - For support and documentation go to https://www.broadinstitute.org/gatk 
+INFO  23:22:30,240 HelpFormatter - [Fri Jan 27 23:22:30 GMT 2017] Executing on Linux 2.6.32-573.38.1.el6.x86_64 amd64 
+INFO  23:22:30,240 HelpFormatter - Java HotSpot(TM) 64-Bit Server VM 1.8.0_40-b26 JdkDeflater 
+INFO  23:22:30,243 HelpFormatter - Program Args: -T CombineVariants -R /scratch/medgen/resources/gatk_bundle/b37/decompressed/human_g1k_v37.fasta -V /scratch/medgen/users/alexey/wecare_6_jan2017/wecare_nfe_nov2016_vqsr_shf_sma_ann/wecare_nfe_nov2016_vqsr_shf_sma_ann.vcf -V /scratch/medgen/resources/phase3_1k_release20130502/selected_samples/kgen_selected_50_cat_sma_cln_id.vcf -o /scratch/medgen/scripts/wecare_stat_01.17/interim_data/wecare_nfe_kgen50.vcf -genotypeMergeOptions UNIQUIFY -env -nt 12 
+INFO  23:22:30,269 HelpFormatter - Executing as al720@sand-8-26 on Linux 2.6.32-573.38.1.el6.x86_64 amd64; Java HotSpot(TM) 64-Bit Server VM 1.8.0_40-b26. 
+INFO  23:22:30,270 HelpFormatter - Date/Time: 2017/01/27 23:22:30 
+INFO  23:22:30,270 HelpFormatter - ---------------------------------------------------------------------------------- 
+INFO  23:22:30,270 HelpFormatter - ---------------------------------------------------------------------------------- 
+INFO  23:22:30,353 GenomeAnalysisEngine - Strictness is SILENT 
+INFO  23:22:30,708 GenomeAnalysisEngine - Downsampling Settings: Method: BY_SAMPLE, Target Coverage: 1000 
+INFO  23:23:09,436 RMDTrackBuilder - Writing Tribble index to disk for file /scratch/medgen/users/alexey/wecare_6_jan2017/wecare_nfe_nov2016_vqsr_shf_sma_ann/wecare_nfe_nov2016_vqsr_shf_sma_ann.vcf.idx 
+INFO  23:25:54,593 RMDTrackBuilder - Writing Tribble index to disk for file /scratch/medgen/resources/phase3_1k_release20130502/selected_samples/kgen_selected_50_cat_sma_cln_id.vcf.idx 
+INFO  23:26:32,000 MicroScheduler - Running the GATK in parallel mode with 12 total threads, 1 CPU thread(s) for each of 12 data thread(s), of 16 processors available on this machine 
+INFO  23:26:32,602 GenomeAnalysisEngine - Preparing for traversal 
+INFO  23:26:32,607 GenomeAnalysisEngine - Done preparing for traversal 
+INFO  23:26:32,607 ProgressMeter - [INITIALIZATION COMPLETE; STARTING PROCESSING] 
+INFO  23:26:32,608 ProgressMeter -                 | processed |    time |    per 1M |           |   total | remaining 
+INFO  23:26:32,608 ProgressMeter -        Location |     sites | elapsed |     sites | completed | runtime |   runtime 
+INFO  23:27:02,611 ProgressMeter -      1:87994449   2128228.0    30.0 s      14.0 s        2.8%    17.6 m      17.1 m 
+INFO  23:27:32,614 ProgressMeter -     1:194989010   3668785.0    60.0 s      16.0 s        6.3%    15.9 m      14.9 m 
+INFO  23:28:02,615 ProgressMeter -      2:31581439   6124800.0    90.0 s      14.0 s        9.1%    16.6 m      15.1 m 
+INFO  23:28:32,615 ProgressMeter -     2:131995493   9031354.0   120.0 s      13.0 s       12.3%    16.3 m      14.3 m 
+INFO  23:29:02,616 ProgressMeter -     2:207991343   1.0253799E7     2.5 m      14.0 s       14.7%    17.0 m      14.5 m 
+INFO  23:29:32,617 ProgressMeter -      3:50885825   1.1717462E7     3.0 m      15.0 s       17.5%    17.1 m      14.1 m 
+INFO  23:30:02,619 ProgressMeter -     3:147995347   1.3768508E7     3.5 m      15.0 s       20.6%    17.0 m      13.5 m 
+INFO  23:30:42,620 ProgressMeter -      4:56000009   1.7312002E7     4.2 m      14.0 s       24.1%    17.3 m      13.1 m 
+INFO  23:31:12,626 ProgressMeter -     4:155793280   1.9901111E7     4.7 m      14.0 s       27.3%    17.1 m      12.4 m 
+INFO  23:31:42,644 ProgressMeter -      5:37995206   2.1966323E7     5.2 m      14.0 s       29.6%    17.4 m      12.3 m 
+INFO  23:32:22,644 ProgressMeter -     5:161038122   2.4093353E7     5.8 m      14.0 s       33.6%    17.4 m      11.5 m 
+INFO  23:32:52,645 ProgressMeter -      6:69176881   2.5838142E7     6.3 m      14.0 s       36.5%    17.4 m      11.0 m 
+INFO  23:33:22,646 ProgressMeter -     6:153927391   2.7673487E7     6.8 m      14.0 s       39.2%    17.4 m      10.6 m 
+INFO  23:33:52,647 ProgressMeter -      7:56990055   2.979123E7     7.3 m      14.0 s       41.6%    17.6 m      10.3 m 
+INFO  23:34:32,648 ProgressMeter -       8:7978395   3.3530793E7     8.0 m      14.0 s       45.2%    17.7 m       9.7 m 
+INFO  23:35:12,649 ProgressMeter -     8:119999531   3.6110771E7     8.7 m      14.0 s       48.8%    17.8 m       9.1 m 
+INFO  23:35:42,649 ProgressMeter -      9:46902650   3.8511089E7     9.2 m      14.0 s       51.1%    17.9 m       8.8 m 
+INFO  23:36:12,650 ProgressMeter -     10:13987128   4.0443692E7     9.7 m      14.0 s       54.6%    17.7 m       8.0 m 
+INFO  23:36:42,651 ProgressMeter -    10:113988447   4.3296144E7    10.2 m      14.0 s       57.8%    17.6 m       7.4 m 
+INFO  23:37:22,652 ProgressMeter -     11:89062647   4.5855445E7    10.8 m      14.0 s       61.4%    17.6 m       6.8 m 
+INFO  23:37:52,653 ProgressMeter -     12:30988313   4.7912497E7    11.3 m      14.0 s       63.9%    17.7 m       6.4 m 
+INFO  23:38:22,654 ProgressMeter -    12:102991916   4.9136913E7    11.8 m      14.0 s       66.2%    17.9 m       6.0 m 
+INFO  23:38:52,655 ProgressMeter -     13:68990522   5.1463617E7    12.3 m      14.0 s       69.4%    17.8 m       5.4 m 
+INFO  23:39:22,656 ProgressMeter -     14:73999928   5.3828365E7    12.8 m      14.0 s       73.3%    17.5 m       4.7 m 
+INFO  23:39:52,657 ProgressMeter -     15:49088488   5.6652483E7    13.3 m      14.0 s       76.0%    17.6 m       4.2 m 
+INFO  23:40:22,658 ProgressMeter -     16:27058773   5.8245062E7    13.8 m      14.0 s       78.6%    17.6 m       3.8 m 
+INFO  23:41:02,659 ProgressMeter -     17:56552655   6.1907021E7    14.5 m      14.0 s       82.4%    17.6 m       3.1 m 
+INFO  23:41:42,660 ProgressMeter -     18:76988019   6.4223001E7    15.2 m      14.0 s       85.7%    17.7 m       2.5 m 
+INFO  23:42:22,661 ProgressMeter -     20:42997712   6.7141306E7    15.8 m      14.0 s       89.0%    17.8 m     117.0 s 
+INFO  23:42:52,661 ProgressMeter -     22:33997220   6.9578668E7    16.3 m      14.0 s       92.3%    17.7 m      81.0 s 
+INFO  23:43:12,917 ProgressMeter -            done   7.0027006E7    16.7 m      14.0 s       99.8%    16.7 m       1.0 s 
+INFO  23:43:12,918 ProgressMeter - Total runtime 1000.31 secs, 16.67 min, 0.28 hours 
+------------------------------------------------------------------------------------------
+Done. There were no warn messages.
+------------------------------------------------------------------------------------------

@@ -1,0 +1,386 @@
+---
+title: "Explore crude AFs in selected genes"
+author: "Alexey Larionov"
+output: html_document
+params:
+  interim_data: "/scratch/medgen/scripts/wecare_stat_11.16/interim_data"
+---
+
+started: 01Mar2016  
+last updated: 18Dec2016
+
+# Criteria
+
+### Loss of function
+"splice_acceptor_variant", "splice_donor_variant", "stop_gain", "stop_lost", 
+"start_lost", "frameshift_variant" : 5,152 variants
+
+### Missense
+"deleterious" and "probably_damaging": 18,350 variants (dd)
+or
+"deleterious" and ("probably_damaging" or "possibly_damaging"): 27,754 variants (ddd)
+
+### ClinSig
+"likely_pathogenic", "risk_factor", "pathogenic", "association", "protective", 
+"drug_response": 793 variants
+
+### High AF in 1k (i.e. rare sequence versions in Ref Genome)
+EUR_AF>0.9 : 3,374 variants
+
+### Total retained
+**Variants:** 23,923 (dd) or 33,238 (ddd)
+**Genes:** 10,222 (dd) or 11,812 (ddd)
+~2.34 protein-affecting variants per gene (dd) or 2.81 (ddd)
+
+### Not included: "cosm" in Existing_Variation
+32,322 variants
+
+# start_section
+
+```{r start_section}
+
+# Start time
+Sys.time()
+
+# Do NOT clean-up at this stage
+#rm(list=ls()) # this would remove params object!
+graphics.off()
+
+# Read parameters
+interim_data_folder <- params$interim_data
+
+# Load libraries
+library(dplyr)
+library(reshape2) # for melt()
+library(ggplot2)
+
+# Set root working folder
+#library(knitr)
+#opts_knit$set(root.dir = "/scratch/medgen/scripts/wecare_stat_11.16/scripts")
+#setwd("/scratch/medgen/scripts/wecare_stat_11.16/scripts")
+
+```
+
+# load_data
+
+```{r load_data}
+
+# Remove params object to avoid interference with load() function
+rm(params)
+
+# Load data
+load(paste(interim_data_folder, "s04_filter_by_variant_effect.RData", sep="/"))
+
+```
+
+# check_data
+
+```{r check_data}
+
+ls()
+
+dim(gt_wecare_pf_dd.mx)
+class(gt_wecare_pf_dd.mx)
+gt_wecare_pf_dd.mx[1:5,1:5]
+
+dim(gt_wecare_pf_ddd.mx)
+class(gt_wecare_pf_ddd.mx)
+gt_wecare_pf_ddd.mx[1:5,1:5]
+
+dim(gt_nfe_dd.mx)
+class(gt_nfe_dd.mx)
+gt_nfe_dd.mx[1:5,1:5]
+
+dim(gt_nfe_ddd.mx)
+class(gt_nfe_ddd.mx)
+gt_nfe_ddd.mx[1:5,1:5]
+
+dim(kgen_dd.df)
+colnames(kgen_dd.df)
+kgen_dd.df[1:5,1:5]
+
+dim(kgen_ddd.df)
+colnames(kgen_ddd.df)
+kgen_ddd.df[1:5,1:5]
+
+dim(exac_dd.df)
+colnames(exac_dd.df)
+exac_dd.df[1:5,1:5]
+
+dim(exac_ddd.df)
+colnames(exac_ddd.df)
+exac_ddd.df[1:5,1:5]
+
+dim(variants_dd.df)
+str(variants_dd.df)
+variants_dd.df[1:5,1:5]
+
+dim(variants_ddd.df)
+str(variants_ddd.df)
+variants_ddd.df[1:5,1:5]
+
+dim(phenotypes_wecare_pf.df)
+str(phenotypes_wecare_pf.df)
+phenotypes_wecare_pf.df[1:5,1:5]
+
+# Check consistency of rownames and colnames
+sum(colnames(gt_wecare_pf_dd.mx) != rownames(phenotypes_wecare_pf.df))
+sum(rownames(gt_wecare_pf_dd.mx) != rownames(gt_nfe_dd.mx))
+sum(rownames(gt_wecare_pf_dd.mx) != rownames(kgen_dd.df))
+sum(rownames(gt_wecare_pf_dd.mx) != rownames(exac_dd.df))
+sum(rownames(gt_wecare_pf_dd.mx) != rownames(variants_dd.df))
+
+sum(colnames(gt_wecare_pf_ddd.mx) != rownames(phenotypes_wecare_pf.df))
+sum(rownames(gt_wecare_pf_ddd.mx) != rownames(gt_nfe_ddd.mx))
+sum(rownames(gt_wecare_pf_ddd.mx) != rownames(kgen_ddd.df))
+sum(rownames(gt_wecare_pf_ddd.mx) != rownames(exac_ddd.df))
+sum(rownames(gt_wecare_pf_ddd.mx) != rownames(variants_ddd.df))
+
+```
+
+# function_to_explore_crude_AFs
+
+Function for exploring a gene. 
+
+Compares crude allelic frequencies in  
+- CBC vs UBC (Fisher test)  
+- Wecare vs NFE (Fisher test)  
+- CBC vs UBC vs NFE (proportion trend test from R-stats)  
+
+Outputs text files with  
+- variants,  
+- cases,  
+- variants per group and  
+- variants per case  
+
+```{r explore_crude_AFs}
+
+explore_crude_AFs <- function(gene, set) {
+
+    #gene="BRCA1"
+    #set="dd"
+    
+    print("")
+    print(paste("-----------------", gene, set, "-----------------"))
+    print("")
+    
+    #  --- Select dataset --- #
+
+    if(set == "dd"){
+        gt_wecare_pf.mx <- gt_wecare_pf_dd.mx
+        gt_nfe.mx <- gt_nfe_dd.mx
+        kgen.df <- kgen_dd.df
+        exac.df <- exac_dd.df
+        variants.df <- variants_dd.df
+    }
+
+    if(set == "ddd"){
+        gt_wecare_pf.mx <- gt_wecare_pf_ddd.mx
+        gt_nfe.mx <- gt_nfe_ddd.mx
+        kgen.df <- kgen_ddd.df
+        exac.df <- exac_ddd.df
+        variants.df <- variants_ddd.df
+    }
+
+    # --- prepare intermediate data for analyses --- #
+    
+    # Get variants IDs
+    var_ids <- as.vector(variants.df[variants.df$SYMBOL == gene, "SplitVarID"])
+    
+    # Wecare and nfe subsets
+    gene_wecare.mx <- gt_wecare_pf.mx[variants.df$SYMBOL == gene,]
+    gene_nfe.mx <- gt_nfe.mx[variants.df$SYMBOL==gene,]
+    
+    # Sub-groups of wecare cases (f = familial, s = sporadic)
+    cbc_f <- phenotypes_wecare_pf.df$cc == 1 & phenotypes_wecare_pf.df$family_history == 1
+    cbc_s <- phenotypes_wecare_pf.df$cc == 1 & phenotypes_wecare_pf.df$family_history == 0
+    ubc_f <- phenotypes_wecare_pf.df$cc == 0 & phenotypes_wecare_pf.df$family_history == 1
+    ubc_s <- phenotypes_wecare_pf.df$cc == 0 & phenotypes_wecare_pf.df$family_history == 0
+
+    # Function for calculating AN
+    AN_count <- function(x){2*sum(!is.na(x))} # note coefficient 2
+
+    # --- cbc vs ubc --- #
+    
+    # Select cbc and ubc subsets for the gene
+    gene_cbc.mx <- gene_wecare.mx[, cbc_f | cbc_s ]
+    gene_ubc.mx <- gene_wecare.mx[, ubc_f | ubc_s ]
+    
+    gene_cbc_AC <- sum(apply(gene_cbc.mx, 1, sum, na.rm=TRUE))
+    gene_cbc_AN <- sum(apply(gene_cbc.mx, 1, AN_count))
+    gene_cbc_AF <- gene_cbc_AC / gene_cbc_AN
+    
+    gene_ubc_AC <- sum(apply(gene_ubc.mx, 1, sum, na.rm=TRUE))
+    gene_ubc_AN <- sum(apply(gene_ubc.mx, 1, AN_count))
+    gene_ubc_AF <- gene_ubc_AC / gene_ubc_AN
+    
+    a <- c(gene_cbc_AC, gene_cbc_AN - gene_cbc_AC)
+    b <- c(gene_ubc_AC, gene_ubc_AN - gene_ubc_AC)
+    c <- matrix(c(a,b),nrow=2)
+    print(c)
+    
+    d <- fisher.test(c)
+    print(d)
+  
+    e <- c(gene_cbc_AF,gene_ubc_AF)
+    names(e) <- c(paste("CBC: ", format(100*gene_cbc_AF,digits=2,scientific=FALSE), "%", sep=""),
+                  paste("UBC: ", format(100*gene_ubc_AF,digits=2,scientific = FALSE), "%", sep=""))
+    print(e)
+    
+    main <- paste("Crude ", gene, " allelic frequencies ", set," (Fisher test p=", 
+                  format(d$p.value,digits=2,scientific=FALSE), ")", sep="")
+    barplot(e, ylab="AF", main=main)
+
+    # --- wecare vs nfe --- #
+  
+    gene_nfe_AN <- sum(apply(gene_nfe.mx, 1, AN_count))
+    gene_nfe_AC <- sum(apply(gene_nfe.mx, 1, sum, na.rm=TRUE))
+    gene_nfe_AF <- gene_nfe_AC / gene_nfe_AN
+    
+    gene_wecare_AN <- sum(apply(gene_wecare.mx, 1, AN_count))
+    gene_wecare_AC <- sum(apply(gene_wecare.mx, 1, sum, na.rm=TRUE))
+    gene_wecare_AF <- gene_wecare_AC / gene_wecare_AN
+  
+    a <- c(gene_wecare_AC, gene_wecare_AN - gene_wecare_AC)
+    b <- c(gene_nfe_AC, gene_nfe_AN - gene_nfe_AC)
+    c <- matrix(c(a,b),nrow=2)
+    print(c)
+    
+    d <- fisher.test(c)
+    print(d)
+  
+    e <- c(gene_wecare_AF, gene_nfe_AF)
+    names(e) <- c(paste("Wecare: ", format(100*gene_wecare_AF,digits=2,scientific=FALSE),"%",sep=""),
+                  paste("NFE: ", format(100*gene_nfe_AF,digits=2,scientific = FALSE),"%",sep=""))
+    print(e)
+    
+    main <- paste("Crude ", gene, " allelic frequencies ", set," (Fisher test p=", 
+                  format(d$p.value,digits=2,scientific = FALSE), ")", sep="")
+    barplot(e, ylab="AF", main=main)
+  
+    # --- cbc-ubc-nfe --- #
+    a <- c(gene_cbc_AC, gene_ubc_AC, gene_nfe_AC)
+    b <- c(gene_cbc_AN, gene_ubc_AN, gene_nfe_AN)
+    c <- rbind(a,b)
+    
+    rownames(c) <- c("AC", "AN")
+    colnames(c) <- c("cbc", "ubc", "nfe")
+    print(c)
+    
+    d <- prop.trend.test(a,b)
+    print(d)
+    
+    e <- c(gene_cbc_AF, gene_ubc_AF, gene_nfe_AF)
+    names(e) <- c(paste("CBC: ", format(100*gene_cbc_AF,digits=2,scientific=FALSE), "%", sep=""), 
+                  paste("UBC: ", format(100*gene_ubc_AF,digits=2,scientific=FALSE), "%", sep=""), 
+                  paste("NFE: ", format(100*gene_nfe_AF,digits=2,scientific=FALSE), "%", sep=""))
+    print(e)
+    
+    main=paste("Crude ", gene, " allelic frequencies ", set," (proportion trend test p=", 
+               format(d$p.value,digits=2,scientific=FALSE),")",sep="")
+    barplot(e, ylab="AF", main=main)
+
+    # --- table with variants detsails --- #
+    
+    variants_fields <- c("SplitVarID", "Existing_variation", "Multiallelic", "SYMBOL", "TYPE", 
+            "CHROM", "POS", "REF", "ALT", "AC", "AN", "AF", "Consequence", "SIFT_call", 
+            "PolyPhen_call", "CLIN_SIG", "Protein_position", "Amino_acids")
+    gene_variants.df <- variants.df[var_ids, variants_fields]
+    
+    gene_kgen_EUR_AF <- kgen.df[var_ids,"kgen.EUR_AF"]
+    gene_exac_NFE_AF <- exac.df[var_ids,"exac_non_TCGA.AC_NFE"] / exac.df[var_ids,"exac_non_TCGA.AN_NFE"]
+    gene_variants.df <- cbind(gene_variants.df, gene_kgen_EUR_AF, gene_exac_NFE_AF)
+    
+    write.table(gene_variants.df, file=paste(interim_data_folder,"/t01_", gene, "_variants_", set,".txt", sep=""), 
+                quote=FALSE, sep="\t", row.names = FALSE)
+    
+    # --- table with variants by groups --- #
+    
+    gene_wecare.mx <- gt_wecare_pf.mx[var_ids,]
+    gene_nfe.mx <- gt_nfe.mx[var_ids,]
+    
+    a <- apply(gene_wecare.mx[, cbc_f],1,sum,na.rm=TRUE)
+    b <- apply(gene_wecare.mx[, cbc_s],1,sum,na.rm=TRUE)
+    c <- apply(gene_wecare.mx[, ubc_f],1,sum,na.rm=TRUE)
+    d <- apply(gene_wecare.mx[, ubc_s],1,sum,na.rm=TRUE)
+    e <- apply(gene_nfe.mx,1,sum,na.rm=TRUE)
+    f <- rbind(a,b,c,d,e)
+    f <- rbind(as.vector(variants.df[colnames(f),"Existing_variation"]),f)
+    rownames(f) <- c("existing_variation" ,"cbc_f", "cbc_s", "ubc_f", "ubc_s", "nfe")
+    write.table(f, 
+                file=paste(interim_data_folder,"/t01_",gene ,"_variants_by_groups_", set,".txt",sep=""), 
+                quote=FALSE, sep="\t")
+    
+    # --- table with variants by cases --- #
+    
+    x <- gene_wecare.mx[,apply(gene_wecare.mx, 2, sum,na.rm=TRUE) != 0]
+    dim(x)
+    sum(x, na.rm=TRUE)
+    write.table(x, file=paste(interim_data_folder,"/t01_", gene, "_variants_by_cases_", set,".txt",sep=""), quote=FALSE, sep="\t")
+    
+    # --- table with details of cases carrying the variants --- #
+    
+    gene_wecare_cases <- colnames(x)
+    cases_fields <- c("gwas_id", "cc", "family_history", "age_dx", "rstime", "er", "pr", "hist_cat", "num_preg")
+    y <- phenotypes_wecare_pf.df[gene_wecare_cases, cases_fields] 
+    write.table(y, file=paste(interim_data_folder,"/t01_", gene, "_cases_", set,".txt",sep=""), quote=FALSE, sep="\t")
+    
+}
+
+```
+
+# explore_selected_genes
+
+```{r explore_selected_genes}
+
+# --- dd --- #
+
+explore_crude_AFs("BRCA1", "dd")
+explore_crude_AFs("BRCA2", "dd")
+explore_crude_AFs("PALB2", "dd")
+
+explore_crude_AFs("ATM", "dd")
+explore_crude_AFs("CHEK2", "dd")
+explore_crude_AFs("TP53", "dd")
+explore_crude_AFs("CDH1", "dd")
+explore_crude_AFs("NF1", "dd")
+explore_crude_AFs("NBN", "dd")
+#explore_crude_AFs("STK11", "dd") # no dd variants in wecare
+# explore_crude_AFs("PTEN", "dd") # no dd variants in wecare
+
+explore_crude_AFs("POLG", "dd")
+explore_crude_AFs("SLC9A3R1", "dd")
+explore_crude_AFs("RECQL", "dd")
+explore_crude_AFs("MKI67", "dd")
+
+# --- ddd --- #
+
+explore_crude_AFs("BRCA1", "ddd")
+explore_crude_AFs("BRCA2", "ddd")
+explore_crude_AFs("PALB2", "ddd")
+
+explore_crude_AFs("ATM", "ddd")
+explore_crude_AFs("CHEK2", "ddd")
+explore_crude_AFs("TP53", "ddd")
+explore_crude_AFs("CDH1", "ddd")
+explore_crude_AFs("NF1", "ddd")
+explore_crude_AFs("NBN", "ddd")
+#explore_crude_AFs("STK11", "ddd") # no ddd variants in wecare
+#explore_crude_AFs("PTEN", "ddd") # no ddd variants in wecare
+
+explore_crude_AFs("POLG", "ddd")
+explore_crude_AFs("SLC9A3R1", "ddd")
+explore_crude_AFs("RECQL", "ddd")
+explore_crude_AFs("MKI67", "ddd")
+
+```
+
+# final_section
+
+```{r final_section}
+
+ls()
+sessionInfo()
+Sys.time()
+
+```

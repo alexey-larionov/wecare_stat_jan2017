@@ -1,0 +1,219 @@
+---
+title: "Explore SKAT results"
+author: "AL"
+date: "July 25, 2016"
+output: html_document
+---
+
+started: 25Jul2016  
+last_updated: 25Jul2016
+
+# start_section
+
+```{r start_section}
+
+# Start time
+Sys.time()
+
+# Clean-up
+rm(list=ls())
+graphics.off()
+
+# Set root working folder
+library(knitr)
+opts_knit$set(root.dir = "/scratch/medgen/scripts/rscripts_05.16")
+#setwd("/scratch/medgen/scripts/rscripts_05.16")
+
+library(dplyr)
+
+```
+
+# load_source_data
+
+```{r load_source_data}
+
+load(file="data/s07_variants_glm_feb2016.RData")
+
+```
+
+# read_SKAT_results
+
+```{r read_SKAT_results}
+
+path="tmp/"
+file_prefix <- "wc_07"
+
+# --- Summary --- #
+
+summary.df <- read.table(paste(path, file_prefix, "_summary.txt", sep=""), 
+                        header = TRUE, sep = "\t", quote = "")
+rownames(summary.df) <- summary.df$set
+
+# --- Burden tests --- #
+
+burden.skatw.df <- read.table(paste(path, file_prefix, "_burden_skatw.txt", sep=""), 
+                        header = TRUE, sep = "\t", quote = "")
+rownames(burden.skatw.df) <- burden.skatw.df$set
+
+burden.mbw.df <- read.table(paste(path, file_prefix, "_burden_mbw.txt", sep=""), 
+                        header = TRUE, sep = "\t", quote = "")
+rownames(burden.mbw.df) <- burden.mbw.df$set
+
+burden.lw.df <- read.table(paste(path, file_prefix, "_burden_lw.txt", sep=""), 
+                        header = TRUE, sep = "\t", quote = "")
+rownames(burden.lw.df) <- burden.lw.df$set
+
+# --- SKAT tests --- #
+
+skat.skatw.df <- read.table(paste(path, file_prefix, "_skat_skatw.txt", sep=""), 
+                        header = TRUE, sep = "\t", quote = "")
+rownames(skat.skatw.df) <- skat.skatw.df$set
+
+skat.mbw.df <- read.table(paste(path, file_prefix, "_skat_mbw.txt", sep=""), 
+                        header = TRUE, sep = "\t", quote = "")
+rownames(skat.mbw.df) <- skat.mbw.df$set
+
+skat.lw.df <- read.table(paste(path, file_prefix, "_skat_lw.txt", sep=""), 
+                        header = TRUE, sep = "\t", quote = "")
+rownames(skat.lw.df) <- skat.lw.df$set
+
+# --- SKATO tests --- #
+
+skato.skatw.df <- read.table(paste(path, file_prefix, "_skato_skatw.txt", sep=""), 
+                        header = TRUE, sep = "\t", quote = "")
+rownames(skato.skatw.df) <- skato.skatw.df$set
+
+skato.mbw.df <- read.table(paste(path, file_prefix, "_skato_mbw.txt", sep=""), 
+                        header = TRUE, sep = "\t", quote = "")
+rownames(skato.mbw.df) <- skato.mbw.df$set
+
+skato.lw.df <- read.table(paste(path, file_prefix, "_skato_lw.txt", sep=""), 
+                        header = TRUE, sep = "\t", quote = "")
+rownames(skato.lw.df) <- skato.lw.df$set
+
+# --- CommonRare tests
+
+cr.skat.df <- read.table(paste(path, file_prefix, "_cr_skat.txt", sep=""), 
+                        header = TRUE, sep = "\t", quote = "")
+rownames(cr.skat.df) <- cr.skat.df$set
+
+cr.burden.df <- read.table(paste(path, file_prefix, "_cr_burden.txt", sep=""), 
+                        header = TRUE, sep = "\t", quote = "")
+rownames(cr.burden.df) <- cr.burden.df$set
+
+```
+
+# set_genes_lists
+
+```{r set_genes_lists}
+
+BC_risk_short <- c("BRCA1", "BRCA2", "PALB2", "CHEK2", "ATM", "TP53", 
+                   "PTEN", "STK11", "CDH1", "NF1", "NBN", "RECQL")
+
+BC_risk_long <- as.vector(read.table("bc_risk.txt")[,1])
+BC_somatic_genes <- as.vector(read.table("bc_somatic.txt")[,1])
+DNA_repair_genes <- as.vector(read.table("dna_repair.txt")[,1])
+
+ER_genes <- c("ESR1", "CYP19A1", "SHBG")
+
+```
+
+# explore_results
+
+```{r explore_results}
+
+# Add average p column (somehow dplyr mutate did not help)
+x <- summary.df[,c(
+  "burden_skatw", "burden_mbw", "burden_lw", 
+  "skat_skatw", "skat_mbw", "skat_lw", 
+  "skato_skatw", "skato_mbw", "skato_lw",
+  "cr_skat", "cr_burden")]
+avg_p = apply(x, 1, mean, na.rm=TRUE)
+
+summary.df <- cbind(summary.df,avg_p)
+
+min_p_rnk <- rank(summary.df$min_p)
+avg_p_rnk <- rank(summary.df$avg_p)
+
+summary.df <- cbind(summary.df,min_p_rnk, avg_p_rnk)
+
+summary.df <-summary.df[order(summary.df$min_p),]
+
+write.table(summary.df,"summary_AL26Jul2016.txt", quote=FALSE, sep = "\t")
+
+top_min <- summary.df$min_p_rnk < 200
+top_avg <- summary.df$avg_p_rnk < 200
+top_variants.df <- summary.df[ top_min & top_avg, ] # 113 variants
+rm(top_min, top_avg)
+
+top_in_BC_risk_short <- top_variants.df$set %in% BC_risk_short
+sum(top_in_BC_risk_short)
+top_variants.df[top_in_BC_risk_short,]
+#NF1
+
+BC_risk_short.df <- summary.df[BC_risk_short,]
+BC_risk_short -> rownames(BC_risk_short.df)
+
+top_in_BC_risk_long <- top_variants.df$set %in% BC_risk_long
+sum(top_in_BC_risk_long)
+top_variants.df[top_in_BC_risk_long,]
+#NF1
+
+BC_risk_long.df <- summary.df[BC_risk_long,]
+BC_risk_long -> rownames(BC_risk_long.df)
+
+top_in_BC_somatic <- top_variants.df$set %in% BC_somatic_genes
+sum(top_in_BC_somatic)
+top_variants.df[top_in_BC_somatic,]
+#NF1
+
+BC_somatic.df <- summary.df[BC_somatic_genes,]
+BC_somatic_genes -> rownames(BC_somatic.df)
+# MSH6
+
+top_in_DNA_repair <- top_variants.df$set %in% DNA_repair_genes
+sum(top_in_DNA_repair)
+# None
+
+DNA_repair.df <- summary.df[DNA_repair_genes,]
+DNA_repair_genes -> rownames(DNA_repair.df)
+# MSH6, REV3L, REV1
+
+```
+
+# explore_NF1
+
+```{r explore_NF1_AFs}
+
+nf1.df <- variants.df[variants.df$SYMBOL == "NF1",]
+
+nf1.variants <- rownames(nf1.df)
+
+nf1.genotypes.mx <- genotypes.mx[nf1.variants,]
+
+nf1.cases <- as.logical(apply(nf1.genotypes.mx, 2, sum, na.rm=TRUE))
+sum(nf1.cases)
+nf1.genotypes.mx[,nf1.cases]
+
+nf1.df[,"POS"]
+
+
+```
+
+
+# save_data
+
+```{r save_data}
+
+save.image(file="data/s09_explore_SAKT_results_feb2016.RData")
+
+```
+
+# final_section
+
+```{r final_section}
+
+sessionInfo()
+Sys.time()
+  
+```

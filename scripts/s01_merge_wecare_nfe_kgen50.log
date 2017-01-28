@@ -1,0 +1,48 @@
+Job name: merge_wecare_nfe_kgen50
+Allocated node: sand-8-26
+Initial working folder:
+/scratch/medgen/scripts/wecare_stat_01.17/scripts
+
+ ------------------ Output ------------------ 
+
+Merge wecare-nfe and kgen50 vcfs
+Started s01_merge_wecare_nfe_kgen50.sh: 27Jan2017_23:21:47
+
+Tools and resources:
+java8: /scratch/medgen/tools/java/jre1.8.0_40/bin/java
+gatk360: /scratch/medgen/tools/gatk/gatk-3.6-0/GenomeAnalysisTK.jar
+ref_genome: /scratch/medgen/resources/gatk_bundle/b37/decompressed/human_g1k_v37.fasta
+bcftools: /scratch/medgen/tools/bcftools/bcftools-1.2/bin/bcftools
+plot_vcfstats: /scratch/medgen/tools/bcftools/bcftools-1.2/bin/plot-vcfstats
+
+Files and folders:
+working_folder: /scratch/medgen/scripts/wecare_stat_01.17/scripts
+target_folder: /scratch/medgen/scripts/wecare_stat_01.17/interim_data
+wecare_nfe_vcf: /scratch/medgen/users/alexey/wecare_6_jan2017/wecare_nfe_nov2016_vqsr_shf_sma_ann/wecare_nfe_nov2016_vqsr_shf_sma_ann.vcf
+kgen50_vcf: /scratch/medgen/resources/phase3_1k_release20130502/selected_samples/kgen_selected_50_cat_sma_cln_id.vcf
+wecare_nfe_kgen50_vcf: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/wecare_nfe_kgen50.vcf
+combining_log: /scratch/medgen/scripts/wecare_stat_01.17/scripts/s01_combining.log
+vcfstats_folder: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/vcfstats
+vcf_stats: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/vcfstats/wecare_nfe_kgen50.vchk
+
+Num of variants in wecare-nfe vcf:
+343824
+
+Num of variants in kgen-50 vcf:
+18493739
+
+Started combining vcf-s
+Num of combined variants:
+18677505
+
+Started calculating vcfstats
+
+Parsing bcftools stats output: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/vcfstats/wecare_nfe_kgen50.vchk
+Plotting graphs: python /scratch/medgen/scripts/wecare_stat_01.17/interim_data/vcfstats/plot.py
+Creating PDF: pdflatex summary.tex >plot-vcfstats.log 2>&1
+Finished: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/vcfstats/summary.pdf
+
+Completed calculating vcfstats: 27Jan2017_23:48:54
+
+Done all tasks
+

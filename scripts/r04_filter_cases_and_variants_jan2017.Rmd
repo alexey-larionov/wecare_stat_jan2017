@@ -1,0 +1,241 @@
+---
+title: "filter_cases_wecare_jan2017"
+output: html_document
+---
+
+started: Alexey Larionov, 01Mar2016  
+last updated: Alexey Larionov, 26Jan2017
+
+# Summary
+
+This is the last step that prepares dataset for downstream analyses.  
+
+It performs the following:  
+- remove cases, which failed sequencing
+
+- remove variants that were present in the removed cases only  
+
+- explore the remaining data  
+
+Exac and kgen include only variants that were biallelic in exac/ kgen respectively
+
+# start_section
+
+```{r start_section}
+
+# Time stamp
+Sys.time()
+
+# Folders
+setwd("/scratch/medgen/scripts/wecare_stat_01.17/scripts")
+interim_data_folder <- "/scratch/medgen/scripts/wecare_stat_01.17/interim_data"
+
+# Required libraries
+library(ggplot2)
+library(VennDiagram)
+
+```
+
+# load_data
+
+```{r load_data}
+
+load(paste(interim_data_folder, "r03_consolidate_phenotype_data_jan2016.RData", sep="/"))
+
+```
+
+# check_data
+
+```{r check_data}
+
+ls()
+
+dim(gt.mx)
+class(gt.mx)
+gt.mx[1:5,1:5]
+
+dim(phenotypes.df)
+str(phenotypes.df)
+phenotypes.df[1:5,1:5]
+
+dim(variants.df)
+colnames(variants.df)
+variants.df[1:5,1:5]
+
+dim(kgen.df)
+colnames(kgen.df)
+kgen.df[1:5,1:5]
+
+dim(exac.df)
+colnames(exac.df)
+exac.df[1:5,1:5]
+
+# Check consistency of rownames
+sum(rownames(gt.mx) != rownames(variants.df))
+sum(rownames(gt.mx) != rownames(kgen.df))
+sum(rownames(gt.mx) != rownames(exac.df))
+
+```
+
+# remove_wecare_cases_failed_filters
+
+This step also syncronises the rows (cases) in phenotypes with columns (cases) in genotypes. 
+
+```{r remove_wecare_cases_failed_filters}
+
+pf_cases <- phenotypes.df$filter == "pass"
+sum(pf_cases)
+
+phenotypes.df <- phenotypes.df[pf_cases,]
+dim(phenotypes.df)
+
+retained_cases <- phenotypes.df$wes_id
+
+gt.mx <- gt.mx[,retained_cases]
+dim(gt.mx)
+
+sum(rownames(phenotypes.df) != colnames(gt.mx))
+
+rm(pf_cases, retained_cases)
+
+```
+
+# remove_variants_not_found_in_retained_cases
+
+Remove variants: 283,651 -> 276,591
+
+```{r remove_variants_not_found_in_retained_cases}
+
+missed_variants <- apply(gt.mx, 1, sum, na.rm=TRUE) == 0 
+sum(missed_variants) # 7,060
+
+gt.mx <- gt.mx[!missed_variants,]
+variants.df <- variants.df[!missed_variants,]
+kgen.df <- kgen.df[!missed_variants,]
+exac.df <- exac.df[!missed_variants,]
+
+rm(missed_variants)
+
+```
+
+# compare_variants_in_nfe_and_wecare
+
+```{r compare_variants_in_nfe_and_wecare}
+
+nfe_ids <- colnames(gt.mx)[1:198]
+wecare_ids <- colnames(gt.mx)[199:678]
+
+nfe.mx <- gt.mx[,nfe_ids]
+wecare.mx <- gt.mx[,wecare_ids]
+
+nfe_variants <- apply(nfe.mx, 1, sum, na.rm=TRUE) > 0 
+sum(nfe_variants) # 154,911
+
+wecare_variants <- apply(wecare.mx, 1, sum, na.rm=TRUE) > 0 
+sum(wecare_variants) # 226,722
+
+overlap_variants <- sum(nfe_variants) + sum(wecare_variants) - nrow(variants.df)
+overlap_variants # 105,042
+
+# http://stackoverflow.com/questions/8713994/venn-diagram-proportional-and-color-shading-with-semi-transparency 
+grid.newpage();
+draw.pairwise.venn(sum(nfe_variants), sum(wecare_variants), overlap_variants, 
+                   category=c(paste("nfe\n",sum(nfe_variants)),
+                              paste("wecare\n",sum(wecare_variants))), 
+                   fill = c("red", "green"), alpha = c(0.3, 0.3), 
+                   cex = 2, cat.fontface = 4, fontfamily =3)
+
+rm(nfe_ids, wecare_ids, nfe_variants, wecare_variants, overlap_variants)
+
+```
+
+# compare_nfe_and_wecare_na_rate
+
+- nfe has much higher NA rate, then wecare  
+- dp and gq were similar in nfe and wecare (data not shown)
+
+```{r compare_nfe_and_wecare_na_rate}
+
+# NA rates in genotypes
+gt_nfe.na <- 100 * sum(is.na(nfe.mx)) / (nrow(nfe.mx) * ncol(nfe.mx)) # ~20%
+gt_wecare.na <- 100 * sum(is.na(wecare.mx)) / (nrow(wecare.mx) * ncol(wecare.mx)) # ~3%
+
+# Summary table
+na_summary.df <- data.frame(c("wecare", "nfe"),c(gt_wecare.na, gt_nfe.na))
+colnames(na_summary.df) <- c("dataset", "value")
+na_summary.df
+
+# Plot
+ggplot(na_summary.df, aes(dataset, value)) +
+  geom_bar(aes(fill = dataset), stat="identity")
+
+# Clean-up
+rm(gt_nfe.na, gt_wecare.na, na_summary.df, nfe.mx, wecare.mx)
+
+```
+
+# rename_tables
+
+```{r rename_tables}
+
+wecare_nfe_genotypes.mx <- gt.mx
+wecare_nfe_phenotypes.df <- phenotypes.df
+wecare_nfe_variants.df <- variants.df
+wecare_nfe_kgen.df <- kgen.df
+wecare_nfe_exac.df <- exac.df
+
+rm(gt.mx, phenotypes.df, variants.df, kgen.df, exac.df)
+
+```
+
+# data_summary
+
+```{r data_summary}
+
+ls()
+
+dim(wecare_nfe_genotypes.mx)
+class(wecare_nfe_genotypes.mx)
+wecare_nfe_genotypes.mx[1:5,1:5]
+
+dim(wecare_nfe_phenotypes.df)
+str(wecare_nfe_phenotypes.df)
+wecare_nfe_phenotypes.df[1:5,1:5]
+
+dim(wecare_nfe_variants.df)
+colnames(wecare_nfe_variants.df)
+wecare_nfe_variants.df[1:5,1:5]
+
+dim(wecare_nfe_kgen.df)
+colnames(wecare_nfe_kgen.df)
+wecare_nfe_kgen.df[1:5,1:5]
+
+dim(wecare_nfe_exac.df)
+colnames(wecare_nfe_exac.df)
+wecare_nfe_exac.df[1:5,1:5]
+
+# Check consistency of colnames and rownames
+sum(colnames(wecare_nfe_genotypes.mx) != rownames(wecare_nfe_phenotypes.df))
+sum(rownames(wecare_nfe_genotypes.mx) != rownames(wecare_nfe_variants.df))
+sum(rownames(wecare_nfe_genotypes.mx) != rownames(wecare_nfe_kgen.df))
+sum(rownames(wecare_nfe_genotypes.mx) != rownames(wecare_nfe_exac.df))
+
+```
+
+# save_data
+
+```{r save_data}
+
+save.image(paste(interim_data_folder, "r04_filter_cases_jan2017.RData", sep="/"))
+
+```
+
+# final_section
+
+```{r final_section}
+
+ls()
+sessionInfo()
+Sys.time()
+
+```

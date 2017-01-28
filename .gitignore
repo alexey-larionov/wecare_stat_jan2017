@@ -1,0 +1,8 @@
+*.txt
+*.RData
+*.geno
+*.ind
+*.snp
+*.vcf
+*.vcf.idx
+*.lfidx

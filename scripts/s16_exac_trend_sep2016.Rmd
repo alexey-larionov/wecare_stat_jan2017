@@ -1,0 +1,177 @@
+---
+title: "Calculate CBC-UBC-Exac trend in wecare sep2016"
+author: "Alexey Larionov"
+output: html_document
+params:
+  interim_data: "/scratch/medgen/users/alexey/wecare_stat_sep2016/interim_data"
+  prefix: "wes04_sep2016_vqsr_shf_sma_ann"
+  subset: "std1"
+---
+
+started: Mar2016
+last updated: 26Sep2016
+
+# Summary
+
+Removes cases with insufficient phenotype annotations  
+Calculates AC, AN and AFs for variants in all cases, in CBC and UBC basing on the remaining cases.  
+
+# start_section
+
+```{r start_section}
+
+# Start time
+Sys.time()
+
+# Do NOT clean-up at this stage
+#rm(list=ls()) # this would remove params object!
+graphics.off()
+
+# Read parameters
+interim_data_folder <- params$interim_data
+variants_set <- params$subset
+prefix <- params$prefix
+
+library(dplyr) # for piping, filter, select etc
+
+```
+
+# load_and_check_data
+
+```{r load_and_check_data}
+
+# Remove params object to avoid interference with load() function
+rm(params)
+
+# Load data
+interim_data_file <- paste(interim_data_folder, "/", "s05_recalculate_afs", prefix, "_", variants_set,".RData", sep="")
+load(file=interim_data_file)
+ls()
+
+# Check loaded data
+ls()
+
+variants_set
+
+dim(genotypes.mx)
+class(genotypes.mx)
+genotypes.mx[1:25,1:5]
+
+dim(phenotypes.df)
+colnames(phenotypes.df)
+phenotypes.df[1:5,1:5]
+
+dim(variants.df)
+colnames(variants.df)
+variants.df[1:5,1:5]
+
+dim(wecare.df)
+colnames(wecare.df)
+wecare.df[1:5,1:5]
+
+# check consistency of samples in genotypes and phenotypes
+colnames(genotypes.mx)[1:10]
+rownames(phenotypes.df)[1:10]
+sum(colnames(genotypes.mx) != rownames(phenotypes.df))
+
+# check consistency of variants in genotypes, variants, wecare, kgen and exac
+sum(rownames(genotypes.mx) != rownames(variants.df))
+sum(rownames(genotypes.mx) != rownames(wecare.df))
+sum(rownames(genotypes.mx) != rownames(kgen.df))
+sum(rownames(genotypes.mx) != rownames(exac.df))
+
+```
+
+# calculate_trends
+
+```{r calculate_trends}
+
+# Get genes IDs
+genes <- unique(as.vector(variants.df$SYMBOL))
+
+# Prepare header for the output table
+exac.trends.df <- as.data.frame(matrix(nrow = 0, ncol = 6))
+colnames(exac.trends.df) <- c("gene", "vars_num", "AF_cbc", "AF_ubc", "AF_exac", "p_value")
+
+# For each gene
+for(gene in genes){
+  
+  #gene <- "CHEK2"
+  #gene <- "ATM"
+  
+  # Get set of variants for the gene
+  vars.ids <- variants.df$SYMBOL == gene
+  vars.num <- sum(vars.ids)
+  
+  # Calculate aggregated ACs and ANs in wecare
+  vars.wecare.df <- wecare.df[vars.ids, c("AC_CBC", "AC_UBC", "AN_CBC", "AN_UBC")]
+  AC.cbc <- sum(vars.wecare.df[, "AC_CBC"], na.rm=TRUE)
+  AN.cbc <- sum(vars.wecare.df[, "AN_CBC"], na.rm=TRUE)
+  AC.ubc <- sum(vars.wecare.df[, "AC_UBC"], na.rm=TRUE)
+  AN.ubc <- sum(vars.wecare.df[, "AN_UBC"], na.rm=TRUE)
+  
+  # Calculate aggregated ACs and ANs in exac
+  vars.exac.df <- exac.df[vars.ids, c("exac_non_TCGA.AC_NFE", "exac_non_TCGA.AN_NFE")]
+  AC.exac <- sum(vars.exac.df[, "exac_non_TCGA.AC_NFE"], na.rm=TRUE)
+  AN.exac <- sum(vars.exac.df[, "exac_non_TCGA.AN_NFE"], na.rm=TRUE)
+  
+  # Check that there is no empty ANs
+  AN_product <- AN.cbc * AN.ubc * AN.exac
+  if(AN_product == 0){next}
+  
+  # Calculate AFs
+  AF.cbc <- AC.cbc/AN.cbc
+  AF.ubc <- AC.ubc/AN.ubc
+  AF.exac <- AC.exac/AN.exac
+  
+  # If there is a numerical trend in CBC-UBC pair
+  if( AF.cbc > AF.ubc & AF.ubc > AF.exac ){
+  
+    # Calculate trend test  
+    ACs <- c(AC.cbc, AC.ubc, AC.exac)
+    ANs <- c(AN.cbc, AN.ubc, AN.exac)
+    x <- prop.trend.test(ACs, ANs)
+    #x <- prop.trend.test(ACs, ANs, c(5,2,1)) # Weight-up the CBC-UBC step
+    
+    # Write result
+    result <- c(gene, vars.num, AF.cbc, AF.ubc, AF.exac, x$p.value)
+    exac.trends.df <- rbind(exac.trends.df, result)
+    
+  }
+  
+} # next gene
+
+# Sort results table by p-value
+
+# Write the phenotypes table in a text file
+exac_trend_file <- paste(interim_data_folder, "/", "s06_exac_trend_", prefix, "_", variants_set,".txt", sep="")
+write.table(exac.trends.df, file=exac_trend_file, quote=FALSE, sep="\t")
+
+# Add row names to results datafdame
+rownames(exac.trends.df) <- exac.trends.df$gene
+
+# Clean-up
+rm(gene, vars.ids, vars.num, vars.wecare.df, 
+   AC.cbc, AN.cbc, AF.cbc, AC.ubc, AN.ubc, AF.ubc, 
+   AC.exac, AN.exac, AF.exac, ACs, ANs, x, result)
+
+```
+
+# save_data
+
+```{r save_data}
+
+interim_data_file <- paste(interim_data_folder, "/", "s06_exac_trend", prefix, "_", variants_set,".RData", sep="")
+save.image(file=interim_data_file)
+
+```
+
+# final_section
+
+```{r final_section}
+
+ls()
+sessionInfo()
+Sys.time()
+
+```

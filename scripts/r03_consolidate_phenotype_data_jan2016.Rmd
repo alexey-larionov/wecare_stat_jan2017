@@ -1,0 +1,1130 @@
+---
+title: "consolidate_phenotype_data_wecare_jan2017"
+output: html_document
+---
+
+started: Alexey Larionov, 01Mar2016  
+last updated: Alexey Larionov, 26Jan2017
+
+# Summary
+
+This step prepares phenotype data for downstream analysis. 
+It selects and merges data from various, partially duplicated and incomplete source files: 
+(covar, demographics, samples, phenotypes_update, BRCA1/2-PALB2 carriers)
+
+The data selection is based on the data assessment done during previous versions of analysis (feb, aug, sep, nov 2016).
+
+###Notes:  
+
+1) Remember to impute one truly missed hormones datapoint (P3_H06, later)
+
+2) Despite the fact that **phenotypes.df** and **gt.mx** include the same number of samples, 
+ *wes_IDs* in **phenotypes.df** are not yet syncronised with colnames of **gt.mx**:
+
+- gt.mx has some saqmples names mofifyed or missed (e.g. missing P1_B08, containing P1_E07 and P1_E07_Copy etc)
+
+- order of samples in gt.mx colnames was set by GATK during combining g.vcfs. 
+This order is different from what was was used in samples.txt file, which propogated to phenotypes.df  
+
+3) nfe cases are coded as -1 in cc field
+
+# start_section
+
+```{r start_section}
+
+# Time stamp
+Sys.time()
+
+# Folders
+setwd("/scratch/medgen/scripts/wecare_stat_01.17/scripts")
+interim_data_folder <- "/scratch/medgen/scripts/wecare_stat_01.17/interim_data"
+
+# Do NOT clean-up at this stage
+#rm(list=ls()) # this would remove params object!
+#graphics.off()
+
+# Required libraries
+library(dplyr) # for piping, filter, select etc
+library(reshape2) # for melt()
+library(ggplot2)
+
+```
+
+# load_data
+
+```{r load_data}
+
+load(paste(interim_data_folder, "r02_filter_genotypes_and_variants_jan2017.RData", sep="/"))
+
+```
+
+# check_data
+
+```{r check_data}
+
+ls()
+
+dim(gt.mx)
+class(gt.mx)
+gt.mx[1:5,1:5]
+
+dim(covar.df)
+str(covar.df)
+covar.df[1:5,1:5]
+
+dim(samples.df)
+str(samples.df)
+samples.df[1:5,]
+
+dim(demographics.df)
+str(demographics.df)
+demographics.df[1:5,1:5]
+
+dim(phenotypes_update.df)
+str(phenotypes_update.df)
+phenotypes_update.df[1:5,1:5]
+
+dim(BRCA1_BRCA2_PALB2_cases.df)
+str(BRCA1_BRCA2_PALB2_cases.df)
+BRCA1_BRCA2_PALB2_cases.df[1:5,1:5]
+
+dim(vv.df)
+str(vv.df)
+vv.df[1:5,1:5]
+
+dim(kgen.df)
+str(kgen.df)
+kgen.df[1:5,1:5]
+
+dim(exac.df)
+str(exac.df)
+exac.df[1:5,1:5]
+
+# Check consistence of rownames
+sum(rownames(gt.mx) != rownames(vv.df))
+sum(rownames(gt.mx) != rownames(kgen.df))
+sum(rownames(gt.mx) != rownames(exac.df))
+
+```
+
+# select_variants_annotations
+
+Select variants annotations (based on the previous data assessments)
+This has nothing to do with phenotypes, but still needs to be done somewhere.
+
+```{r select_variants_annotations}
+
+variants.df <- 
+  vv.df %>% 
+  select(SplitVarID, SYMBOL, TYPE, CHROM, POS, REF, ALT, AC, AF, AN, 
+         Consequence, SIFT_call, SIFT_score, PolyPhen_call, PolyPhen_score, CLIN_SIG, 
+         cDNA_position, CDS_position, Codons, Protein_position, Amino_acids, 
+         Existing_variation, Multiallelic)
+
+dim(variants.df)
+str(variants.df)
+variants.df[1:5,1:5]
+
+rm(vv.df)
+
+```
+
+# reshape_covar_table
+
+Select data from covar table (based on the previous data assessments)
+
+```{r reshape_covar_table}
+
+# Keep only selected annotations
+covar.df <- covar.df %>% 
+  select(labid, setno, cc, sub_dx_age, chemo, hormone, XRTBreast, dose, 
+         eig1_covar = Eigen_1, 
+         eig2_covar = Eigen_2, 
+         eig3_covar = Eigen_3)
+
+# change XRTBreast to xrt
+"xrt" -> colnames(covar.df)[7]
+
+# Check result
+dim(covar.df)
+str(covar.df)
+covar.df[1:5,1:5]
+
+```
+
+# reshape_demographics_table
+
+Select data from demographics table (based on the previous data assessments)
+
+## odd_cases
+
+Removing odd cases (based on the previous data assessments)
+
+```{r odd_cases}
+
+# Outlook
+dim(demographics.df)
+colnames(demographics.df)
+demographics.df[1:10,1:5]
+
+# List of odd cases
+odd_cases=c("201558","201921","202698","21IAno","387460",
+            "389192","58IR1+","60IA1+","92IRno","98IAno")
+
+# Show odd cases
+odd_cases.df <- demographics.df %>% filter(Subject_ID %in% odd_cases)
+odd_cases.df[1:5]
+
+# Cases to preserve:
+# 201558, 201921, 387460, 389192 - added in dec 2016
+# 202698 - present in covar
+
+# Add missed labid to the cases, which will be preserved
+as.vector(demographics.df$labid.x) -> demographics.df$labid.x
+"id201558" -> demographics.df[demographics.df$Subject_ID == "201558", "labid.x"]
+"id201921" -> demographics.df[demographics.df$Subject_ID == "201921", "labid.x"]
+"id387460" -> demographics.df[demographics.df$Subject_ID == "387460", "labid.x"]
+"id389192" -> demographics.df[demographics.df$Subject_ID == "389192", "labid.x"]
+"id202698" -> demographics.df[demographics.df$Subject_ID == "202698", "labid.x"]
+
+# Cases to exclude: odd cases IDs and data
+cases_to_exclude=c("21IAno","58IR1+","60IA1+","92IRno","98IAno")
+
+demographics.df <- demographics.df %>% filter(! Subject_ID %in% cases_to_exclude)
+dim(demographics.df)
+demographics.df[1:10,1:5]
+
+rm(odd_cases, odd_cases.df, cases_to_exclude)
+
+```
+
+## duplicated_cases - not needed to remove? - it will be filtered by "filter" field
+
+Removing duplicates (based on the previous data assessments)  
+
+259643: P4_F01, P5_D08  
+272715: P4_F02, P5_D07  
+
+The demographic data in duplicates were identical. 
+The duplicates removal is necessary for proper merging with covar. 
+
+```{r duplicated_cases}
+
+# Remove the duplicated cases (except the 1st duplicate)
+duplicated_cases_bool <- duplicated(demographics.df$Subject_ID) # boolean, excluding position of the first duplicate
+demographics.df <- demographics.df[!duplicated_cases_bool,]
+
+# Explore result
+dim(demographics.df)
+demographics.df[1:10,1:5]
+
+# Clean-up
+rm(duplicated_cases_bool)
+
+```
+
+## select_demographics_data
+
+Selecting data (based on the previous data assessments)
+
+```{r select_demographics_data}
+
+# Select columns
+demographics.df <- demographics.df %>% select(
+  labid = labid.x,
+  cc = cc.x,
+  setno = setno.x,
+  family_history = family_history.y,
+  sub_dx_age = sub_dx_age.x,
+  refage = refage,
+  rstime = rstime,
+  eig1_demo = Eigen_1.x,
+  eig2_demo = Eigen_2.x,
+  eig3_demo = Eigen_3.x,
+  stage_fd = stage_fd,
+  er1 = er1,
+  pr1_cat = pr1_cat,
+  histo1_cat = histo1_cat,
+  hormone = hormone,
+  CMF = CMF,
+  XRTBrCHAR = XRTBrCHAR,
+  dose_caseloc = dose_caseloc,
+  rh_age_menarche = rh_age_menarche,
+  age_1fftp_fd = age_1fftp_fd, 
+  age_menopause_1yrbf_fd = age_menopause_1yrbf_fd,
+  num_preg = num_preg,
+  BMI_age18 = BMI_age18,
+  BMI_dx = BMI_dx,
+  BMI_ref = BMI_ref)
+
+# Recode categorical pr to NA, 0 and 1
+demographics.df <- demographics.df %>% mutate(
+  pr1 = ifelse(pr1_cat=="negative", 0,
+        ifelse(pr1_cat=="positive", 1,
+        NA)))
+
+# Substitute zero age of menarche to NA
+demographics.df <- demographics.df %>% mutate(
+  age_menarche = ifelse(rh_age_menarche==0, NA, rh_age_menarche))
+
+# Remove initial fields
+demographics.df <- demographics.df %>% select(-rh_age_menarche, -pr1_cat)
+
+```
+
+# merge_demographics_and_covar
+
+```{r merge_demographics_and_covar}
+
+# Check data frames
+dim(covar.df)
+dim(demographics.df)
+colnames(covar.df)
+colnames(demographics.df)
+
+# Prepare key for joining
+covar.df$labid <- as.vector(covar.df$labid)
+demographics.df$labid <- as.vector(demographics.df$labid)
+
+# Join data frames
+pheno.df <- left_join(covar.df, demographics.df, by="labid")
+dim(pheno.df)
+colnames(pheno.df)
+
+# Eigenvectors are the same (a common-sense check)
+sum(pheno.df$eig1_demo != pheno.df$eig1_covar, na.rm=TRUE)
+sum(pheno.df$eig2_demo != pheno.df$eig2_covar, na.rm=TRUE)
+sum(pheno.df$eig3_demo != pheno.df$eig3_covar, na.rm=TRUE)
+
+# Select columns
+pheno.df <- pheno.df %>% 
+  select(
+    gwas_id = labid, 
+    cc = cc.x, 
+    setno = setno.x,
+    family_history = family_history,
+    age_dx = sub_dx_age.x, 
+    age_ref = refage, 
+    rstime = rstime,
+    eig1_gwas = eig1_covar, 
+    eig2_gwas = eig2_covar, 
+    eig3_gwas = eig3_covar, 
+    stage = stage_fd, 
+    er = er1, 
+    pr = pr1, 
+    hist_cat = histo1_cat, 
+    hormone = hormone.x, 
+    chemo_cat = CMF, 
+    br_xray = XRTBrCHAR, 
+    br_xray_dose = dose_caseloc, 
+    age_menarche = age_menarche, 
+    age_1st_ftp = age_1fftp_fd, 
+    age_menopause = age_menopause_1yrbf_fd, 
+    num_preg = num_preg, 
+    bmi_age18 = BMI_age18, 
+    bmi_dx = BMI_dx, 
+    bmi_ref = BMI_ref)
+
+dim(pheno.df)
+colnames(pheno.df)
+
+rm(covar.df, demographics.df)
+
+```
+
+# merge_pheno_and_samples
+
+This step adds wes_IDs and data to filter samples basing on wes performance. 
+
+Importantly: wes_IDs are not yet syncronised with colnames of gt.mx:
+
+- gt.mx has some saqmples names mofifyed or missed (e.g. missing P1_B08, containing P1_E07 and P1_E07_Copy etc)
+
+- order of samples in gt.mx colnames was set by GATK during combining g.vcfs. 
+This order is different from what was was used in samples.txt file, which propogated to phenotypes.df
+
+```{r merge_pheno_and_samples}
+
+# Prepare key for joining
+samples.df$gwas_id <- as.vector(samples.df$gwas_id)
+
+# Join data frames
+phenotypes.df <- full_join(samples.df, pheno.df, by="gwas_id")
+
+# Check results
+dim(phenotypes.df)
+colnames(phenotypes.df)
+str(phenotypes.df)
+phenotypes.df[1:10, 1:7]
+
+# reformat_phenotypes gwas and wes ids ...
+str(phenotypes.df)
+
+as.vector(phenotypes.df$wes_id) -> phenotypes.df$wes_id
+as.vector(phenotypes.df$merged_id) -> phenotypes.df$merged_id
+as.vector(phenotypes.df$filter) -> phenotypes.df$filter
+as.vector(phenotypes.df$hist_cat) -> phenotypes.df$hist_cat
+NA -> phenotypes.df$hist_cat[phenotypes.df$hist_cat == "unknown"]
+as.vector(phenotypes.df$chemo_cat) -> phenotypes.df$chemo_cat
+
+str(phenotypes.df)
+
+# Clean-up
+rm(samples.df, pheno.df)
+
+```
+
+# add_new_pheno_data
+
+Remember to impute one truly missed hormones datapoint (P3_H06, later)
+
+```{r add_new_pheno_data}
+
+# For each sample with phenotypes update
+for(i in 1:nrow(phenotypes_update.df)){
+  
+  # Read updated data
+  gwas_id_upd <- phenotypes_update.df[i,"gwas_id"]
+  wes_id_upd <- phenotypes_update.df[i,"wes_id"]
+  cc_upd <- phenotypes_update.df[i,"cc"]
+  setno_upd <- phenotypes_update.df[i,"setno"]
+  family_history_upd <- phenotypes_update.df[i,"family_history"]
+  age_dx_upd <- phenotypes_update.df[i,"age_dx"]
+  age_ref_upd <- phenotypes_update.df[i,"age_ref"]
+  rstime_upd <- phenotypes_update.df[i,"rstime"]
+  eig1_upd <- phenotypes_update.df[i,"Eigen_1"]
+  eig2_upd <- phenotypes_update.df[i,"Eigen_2"]
+  eig3_upd <- phenotypes_update.df[i,"Eigen_3"]
+  stage_upd <- phenotypes_update.df[i,"stage"]
+  er_upd <- phenotypes_update.df[i,"er1"]
+  pr_upd <- phenotypes_update.df[i,"pr1"]
+  hist_cat_upd <- phenotypes_update.df[i,"hist_cat"]
+  hormone_upd <- phenotypes_update.df[i,"hormone"]
+  chemo_cat_upd <- phenotypes_update.df[i,"chemo_cat"]
+  br_xray_upd <- phenotypes_update.df[i,"br_xray"]
+  br_xray_dose_upd <- phenotypes_update.df[i,"br_xray_dose"]
+  num_preg_upd <- phenotypes_update.df[i,"num_preg"]
+
+  # Progress report
+  print(paste("---", wes_id_upd, "---"))
+
+  # Get rownum in phenotypes data frame
+  j <- phenotypes.df[,"wes_id"] == wes_id_upd
+  
+  # Stop with error if count of wes_id in initial data != 1
+  if(sum(j) != 1){
+    print("Error with wes_id")
+    print("Script terminated") 
+    stop()
+  }
+
+  # --- Check and update gwas_id --- #
+  
+  # if updated data is NA
+  if(is.na(gwas_id_upd)){ 
+    
+    # Stop with error if initial data is not NA
+    if(!is.na(phenotypes.df[j,"gwas_id"])){
+      print("Error with gwas_id")
+      print("Script terminated") 
+      stop()
+    }
+  
+  # If updated data is not NA
+  }else{
+
+    # Update if initial data is NA
+    if(is.na(phenotypes.df[j,"gwas_id"])){
+      gwas_id_upd -> phenotypes.df[j,"gwas_id"]
+      print(paste("Updated gwas_id"))
+    }
+    
+    # Stop with error if the initial data is different from the updated
+    if(phenotypes.df[j,"gwas_id"] != gwas_id_upd){
+      print("Error with gwas_id")
+      print("Script terminated") 
+      stop()
+    }
+  }
+  
+  # --- Check and update cc --- #
+  
+  # if updated data is NA
+  if(is.na(cc_upd)){ 
+    
+    # Stop with error if initial data is not NA
+    if(!is.na(phenotypes.df[j,"cc"])){
+      print("Error with cc")
+      print("Script terminated") 
+      stop()
+    }
+  
+  # If updated data is not NA
+  }else{
+
+    # Update if initial data is NA
+    if(is.na(phenotypes.df[j,"cc"])){
+      cc_upd -> phenotypes.df[j,"cc"]
+      print("Updated cc")
+    }
+    
+    # Stop with error if the initial data is different from the updated
+    if(phenotypes.df[j,"cc"] != cc_upd){
+      print("Error with cc")
+      print("Script terminated") 
+      stop()
+    }
+  }
+  
+  # --- Check and update setno --- #
+  
+  # if updated data is NA
+  if(is.na(setno_upd)){ 
+    
+    # Stop with error if initial data is not NA
+    if(!is.na(phenotypes.df[j,"setno"])){
+      print("Error with setno")
+      print("Script terminated") 
+      stop()
+    }
+  
+  # If updated data is not NA
+  }else{
+
+    # Update if initial data is NA
+    if(is.na(phenotypes.df[j,"setno"])){
+      setno_upd -> phenotypes.df[j,"setno"]
+      print("Updated setno")
+    }
+    
+    # Stop with error if the initial data is different from the updated
+    if(phenotypes.df[j,"setno"] != setno_upd){
+      print("Error with setno")
+      print("Script terminated") 
+      stop()
+    }
+  }
+
+  # --- Check and update family_history --- #
+  
+  # if updated data is NA
+  if(is.na(family_history_upd)){ 
+    
+    # Stop with error if initial data is not NA
+    if(!is.na(phenotypes.df[j,"family_history"])){
+      print("Error with family_history")
+      print("Script terminated") 
+      stop()
+    }
+  
+  # If updated data is not NA
+  }else{
+
+    # Update if initial data is NA
+    if(is.na(phenotypes.df[j,"family_history"])){
+      family_history_upd -> phenotypes.df[j,"family_history"]
+      print("Updated family_history")
+    }
+    
+    # Stop with error if the initial data is different from the updated
+    if(phenotypes.df[j,"family_history"] != family_history_upd){
+      print("Error with family_history")
+      print("Script terminated") 
+      stop()
+    }
+  }
+  
+  # --- Check and update age_dx --- #
+  
+  # if updated data is NA
+  if(is.na(age_dx_upd)){ 
+    
+    # Stop with error if initial data is not NA
+    if(!is.na(phenotypes.df[j,"age_dx"])){
+      print("Error with age_dx")
+      print("Script terminated") 
+      stop()
+    }
+  
+  # If updated data is not NA
+  }else{
+
+    # Update if initial data is NA
+    if(is.na(phenotypes.df[j,"age_dx"])){
+      age_dx_upd -> phenotypes.df[j,"age_dx"]
+      print("Updated age_dx")
+    }
+    
+    # Stop with error if the initial data is different from the updated
+    if(phenotypes.df[j,"age_dx"] != age_dx_upd){
+      print("Error with age_dx")
+      print("Script terminated") 
+      stop()
+    }
+  }
+  
+  # --- Check and update age_ref --- #
+  
+  # if updated data is NA
+  if(is.na(age_ref_upd)){ 
+    
+    # Stop with error if initial data is not NA
+    if(!is.na(phenotypes.df[j,"age_ref"])){
+      print("Error with age_ref")
+      print("Script terminated") 
+      stop()
+    }
+  
+  # If updated data is not NA
+  }else{
+
+    # Update if initial data is NA
+    if(is.na(phenotypes.df[j,"age_ref"])){
+      age_ref_upd -> phenotypes.df[j,"age_ref"]
+      print("Updated age_ref")
+    }
+    
+    # Stop with error if the initial data is different from the updated
+    if(phenotypes.df[j,"age_ref"] != age_ref_upd){
+      print("Error with age_ref")
+      print("Script terminated") 
+      stop()
+    }
+  }
+  
+  # --- Check and update rstime --- #
+  
+  # if updated data is NA
+  if(is.na(rstime_upd)){ 
+    
+    # Stop with error if initial data is not NA
+    if(!is.na(phenotypes.df[j,"rstime"])){
+      print("Error with rstime")
+      print("Script terminated") 
+      stop()
+    }
+  
+  # If updated data is not NA
+  }else{
+
+    # Update if initial data is NA
+    if(is.na(phenotypes.df[j,"rstime"])){
+      rstime_upd -> phenotypes.df[j,"rstime"]
+      print("Updated rstime")
+    }
+    
+    # Stop with error if the initial data is different from the updated
+    if(phenotypes.df[j,"rstime"] != rstime_upd){
+      print("Error with rstime")
+      print("Script terminated") 
+      stop()
+    }
+  }
+  
+  # --- Check and update eig1 --- #
+  
+  # if updated data is NA
+  if(is.na(eig1_upd)){ 
+    
+    # Stop with error if initial data is not NA
+    if(!is.na(phenotypes.df[j,"eig1_gwas"])){
+      print("Error with eig1")
+      print("Script terminated") 
+      stop()
+    }
+  
+  # If updated data is not NA
+  }else{
+
+    # Update if initial data is NA
+    if(is.na(phenotypes.df[j,"eig1_gwas"])){
+      eig1_upd -> phenotypes.df[j,"eig1_gwas"]
+      print("Updated eig1")
+    }
+    
+    # Stop with error if the initial data is different from the updated
+    if(phenotypes.df[j,"eig1_gwas"] != eig1_upd){
+      print("Error with eig1")
+      print("Script terminated") 
+      stop()
+    }
+  }
+
+  # --- Check and update eig2 --- #
+  
+  # if updated data is NA
+  if(is.na(eig2_upd)){ 
+    
+    # Stop with error if initial data is not NA
+    if(!is.na(phenotypes.df[j,"eig2_gwas"])){
+      print("Error with eig2")
+      print("Script terminated") 
+      stop()
+    }
+  
+  # If updated data is not NA
+  }else{
+
+    # Update if initial data is NA
+    if(is.na(phenotypes.df[j,"eig2_gwas"])){
+      eig2_upd -> phenotypes.df[j,"eig2_gwas"]
+      print("Updated eig2")
+    }
+    
+    # Stop with error if the initial data is different from the updated
+    if(phenotypes.df[j,"eig2_gwas"] != eig2_upd){
+      print("Error with eig2")
+      print("Script terminated") 
+      stop()
+    }
+  }
+
+  # --- Check and update eig3 --- #
+  
+  # if updated data is NA
+  if(is.na(eig3_upd)){ 
+    
+    # Stop with error if initial data is not NA
+    if(!is.na(phenotypes.df[j,"eig3_gwas"])){
+      print("Error with eig3")
+      print("Script terminated") 
+      stop()
+    }
+  
+  # If updated data is not NA
+  }else{
+
+    # Update if initial data is NA
+    if(is.na(phenotypes.df[j,"eig3_gwas"])){
+      eig3_upd -> phenotypes.df[j,"eig3_gwas"]
+      print("Updated eig3")
+    }
+    
+    # Stop with error if the initial data is different from the updated
+    if(phenotypes.df[j,"eig3_gwas"] != eig3_upd){
+      print("Error with eig3")
+      print("Script terminated") 
+      stop()
+    }
+  }
+
+  # --- Check and update stage --- #
+  
+  # if updated data is NA
+  if(is.na(stage_upd)){ 
+    
+    # Stop with error if initial data is not NA
+    if(!is.na(phenotypes.df[j,"stage"])){
+      print(paste("Error with stage"))
+      print("Script terminated") 
+      stop()
+    }
+  
+  # If updated data is not NA
+  }else{
+
+    # Update if initial data is NA
+    if(is.na(phenotypes.df[j,"stage"])){
+      stage_upd -> phenotypes.df[j,"stage"]
+      print("Updated stage")
+    }
+    
+    # Stop with error if the initial data is different from the updated
+    if(phenotypes.df[j,"stage"] != stage_upd){
+      print("Error with stage")
+      print("Script terminated") 
+      stop()
+    }
+  }
+  
+  # --- Check and update er --- #
+  
+  # if updated data is NA
+  if(is.na(er_upd)){ 
+    
+    # Stop with error if initial data is not NA
+    if(!is.na(phenotypes.df[j,"er"])){
+      print(paste("Error with er"))
+      print("Script terminated") 
+      stop()
+    }
+  
+  # If updated data is not NA
+  }else{
+
+    # Update if initial data is NA
+    if(is.na(phenotypes.df[j,"er"])){
+      er_upd -> phenotypes.df[j,"er"]
+      print("Updated er")
+    }
+    
+    # Stop with error if the initial data is different from the updated
+    if(phenotypes.df[j,"er"] != er_upd){
+      print(paste("Error with er"))
+      print("Script terminated") 
+      stop()
+    }
+  }
+  
+  # --- Check and update pr --- #
+  
+  # if updated data is NA
+  if(is.na(pr_upd)){ 
+    
+    # Stop with error if initial data is not NA
+    if(!is.na(phenotypes.df[j,"pr"])){
+      print(paste("Error with pr"))
+      print("Script terminated") 
+      stop()
+    }
+  
+  # If updated data is not NA
+  }else{
+
+    # Update if initial data is NA
+    if(is.na(phenotypes.df[j,"pr"])){
+      pr_upd -> phenotypes.df[j,"pr"]
+      print("Updated pr")
+    }
+    
+    # Stop with error if the initial data is different from the updated
+    if(phenotypes.df[j,"pr"] != pr_upd){
+      print(paste("Error with pr"))
+      print("Script terminated") 
+      stop()
+    }
+  }
+  
+  # --- Check and update hist_cat --- #
+  
+  # if updated data is NA
+  if(is.na(hist_cat_upd)){ 
+    
+    # Stop with error if initial data is not NA
+    if(!is.na(phenotypes.df[j,"hist_cat"])){
+      print(paste("Error with hist_cat"))
+      print("Script terminated") 
+      stop()
+    }
+  
+  # If updated data is not NA
+  }else{
+
+    # Update if initial data is NA
+    if(is.na(phenotypes.df[j,"hist_cat"])){
+      hist_cat_upd -> phenotypes.df[j,"hist_cat"]
+      print(paste("Updated hist_cat"))
+    }
+    
+    # Stop with error if the initial data is different from the updated
+    if(phenotypes.df[j,"hist_cat"] != hist_cat_upd){
+      print(paste("Error with hist_cat"))
+      print("Script terminated") 
+      stop()
+    }
+  }
+  
+  # --- Check and update hormone --- #
+  
+  # if updated data is NA
+  if(is.na(hormone_upd)){ 
+    
+    # Stop with error if initial data is not NA
+    if(!is.na(phenotypes.df[j,"hormone"])){
+      print(paste("Error with hormone"))
+      print("Script terminated") 
+      stop()
+    }
+  
+  # If updated data is not NA
+  }else{
+
+    # Update if initial data is NA
+    if(is.na(phenotypes.df[j,"hormone"])){
+      hormone_upd -> phenotypes.df[j,"hormone"]
+      print(paste("Updated hormone"))
+    }
+    
+    # Stop with error if the initial data is different from the updated
+    if(phenotypes.df[j,"hormone"] != hormone_upd){
+      print(paste("Error with hormone"))
+      print("Script terminated") 
+      stop()
+    }
+  }
+  
+  # --- Check and update chemo_cat --- #
+  
+  # if updated data is NA
+  if(is.na(chemo_cat_upd)){ 
+    
+    # Stop with error if initial data is not NA
+    if(!is.na(phenotypes.df[j,"chemo_cat"])){
+      print(paste("Error with chemo_cat"))
+      print("Script terminated") 
+      stop()
+    }
+  
+  # If updated data is not NA
+  }else{
+
+    # Update if initial data is NA
+    if(is.na(phenotypes.df[j,"chemo_cat"])){
+      chemo_cat_upd -> phenotypes.df[j,"chemo_cat"]
+      print(paste("Updated chemo_cat"))
+    }
+    
+    # Stop with error if the initial data is different from the updated
+    if(phenotypes.df[j,"chemo_cat"] != chemo_cat_upd){
+      print(paste("Error with chemo_cat"))
+      print("Script terminated") 
+      stop()
+    }
+  }
+  
+  # --- Check and update br_xray --- #
+  
+  # if updated data is NA
+  if(is.na(br_xray_upd)){ 
+    
+    # Stop with error if initial data is not NA
+    if(!is.na(phenotypes.df[j,"br_xray"])){
+      print(paste("Error with br_xray"))
+      print("Script terminated") 
+      stop()
+    }
+  
+  # If updated data is not NA
+  }else{
+
+    # Update if initial data is NA
+    if(is.na(phenotypes.df[j,"br_xray"])){
+      br_xray_upd -> phenotypes.df[j,"br_xray"]
+      print(paste("Updated br_xray"))
+    }
+    
+    # Stop with error if the initial data is different from the updated
+    if(phenotypes.df[j,"br_xray"] != br_xray_upd){
+      print(paste("Error with br_xray"))
+      print("Script terminated") 
+      stop()
+    }
+  }
+  
+  # --- Check and update br_xray_dose --- #
+  
+  # if updated data is NA
+  if(is.na(br_xray_dose_upd)){ 
+    
+    # Stop with error if initial data is not NA
+    if(!is.na(phenotypes.df[j,"br_xray_dose"])){
+      print(paste("Error with br_xray_dose"))
+      print("Script terminated") 
+      stop()
+    }
+  
+  # If updated data is not NA
+  }else{
+
+    # Update if initial data is NA
+    if(is.na(phenotypes.df[j,"br_xray_dose"])){
+      br_xray_dose_upd -> phenotypes.df[j,"br_xray_dose"]
+      print(paste("Updated br_xray_dose"))
+    }
+    
+    # Stop with error if the initial data is different from the updated
+    if(phenotypes.df[j,"br_xray_dose"] != br_xray_dose_upd){
+      print(paste("Error with br_xray_dose"))
+      print("Script terminated") 
+      stop()
+    }
+  }
+  
+  # --- Check and update num_preg --- #
+  
+  # if updated data is NA
+  if(is.na(num_preg_upd)){ 
+    
+    # Stop with error if initial data is not NA
+    if(!is.na(phenotypes.df[j,"num_preg"])){
+      print(paste("Error with num_preg"))
+      print("Script terminated") 
+      stop()
+    }
+  
+  # If updated data is not NA
+  }else{
+
+    # Update if initial data is NA
+    if(is.na(phenotypes.df[j,"num_preg"])){
+      num_preg_upd -> phenotypes.df[j,"num_preg"]
+      print(paste("Updated num_preg"))
+    }
+    
+    # Stop with error if the initial data is different from the updated
+    if(phenotypes.df[j,"num_preg"] != num_preg_upd){
+      print(paste("Error with num_preg"))
+      print("Script terminated") 
+      stop()
+    }
+  }
+} # next sample
+
+# correct filter field
+updated_samples <- c("P1_C02", "P1_C04", "P1_C06", "P1_C11", "P1_E10", 
+                     "P1_F01", "P1_F10", "P1_H05", "P3_H06", "P3_H07", 
+                     "P3_H08", "P3_H09", "P3_H10")
+
+sum(phenotypes.df$filter == "not_annotated")
+"pass" -> phenotypes.df[ phenotypes.df$wes_id %in% updated_samples ,"filter"]
+sum(phenotypes.df$filter == "not_annotated")
+
+# Clean-up
+rm(i, j, gwas_id_upd, wes_id_upd, cc_upd, setno_upd, family_history_upd,
+  age_dx_upd, age_ref_upd, rstime_upd, eig1_upd, eig2_upd, eig3_upd, 
+  stage_upd, er_upd, pr_upd, hist_cat_upd, hormone_upd, chemo_cat_upd, 
+  br_xray_upd, br_xray_dose_upd, num_preg_upd, phenotypes_update.df, 
+  updated_samples)
+
+```
+
+# add_information_about_BRCA1_BRCA2_PALB2_carriers
+
+```{r add_information_about_BRCA1_BRCA2_PALB2_carriers}
+
+# Mutation carriers
+BRCA1_carriers <- BRCA1_BRCA2_PALB2_cases.df %>% filter(SYMBOL=="BRCA1") %>% select(Cases_wes_id)
+BRCA1_carriers <- as.vector(BRCA1_carriers$Cases_wes_id)
+BRCA1_carriers
+
+BRCA2_carriers <- BRCA1_BRCA2_PALB2_cases.df %>% filter(SYMBOL=="BRCA2") %>% select(Cases_wes_id)
+BRCA2_carriers <- as.vector(BRCA2_carriers$Cases_wes_id)
+BRCA2_carriers
+
+PALB2_carriers <- BRCA1_BRCA2_PALB2_cases.df %>% filter(SYMBOL=="PALB2") %>% select(Cases_wes_id)
+PALB2_carriers <- as.vector(PALB2_carriers$Cases_wes_id)
+PALB2_carriers
+
+# Update phenotypes filter column
+rownames(phenotypes.df) <- phenotypes.df$wes_id
+
+phenotypes.df[BRCA1_carriers,"filter"]
+"BRCA1_carrier" -> phenotypes.df[BRCA1_carriers,"filter"]
+phenotypes.df[BRCA1_carriers,"filter"]
+
+phenotypes.df[BRCA2_carriers,"filter"]
+"BRCA2_carrier" -> phenotypes.df[BRCA2_carriers,"filter"]
+phenotypes.df[BRCA2_carriers,"filter"]
+
+phenotypes.df[PALB2_carriers,"filter"]
+"PALB2_carrier" -> phenotypes.df[PALB2_carriers,"filter"]
+phenotypes.df[PALB2_carriers,"filter"]
+
+rm(BRCA1_carriers, BRCA2_carriers, PALB2_carriers, BRCA1_BRCA2_PALB2_cases.df)
+
+```
+
+# write_wecare_phenotypes_table
+
+```{r write_wecare_phenotypes_table}
+
+write.table(phenotypes.df, file=paste(interim_data_folder, "wecare_phenotypes.txt", sep="/"), quote=FALSE, sep="\t")
+
+```
+
+# explore_cases
+
+of 512 sequenced cases:  
+- 19 failed sequencing (mixed during the libraryu prep, low concordance with gwas, some of those were also non-annotated and BRCA1/2 carriers)  
+- 2 were intentional duplicates  
+- 4 BRCA1 carriers (3 intentional)  
+- 4 BRCA2 carriers  
+- 3 PALB2 carriers
+
+
+```{r explore_cases}
+
+summary(as.factor(phenotypes.df$filter))
+
+```
+
+# add_nfe_to_phenotypes_table
+
+Encoding:  
+- ID to wes_id and rownames  
+- "-1"" to cc  
+- "pass"" to filter  
+
+```{r add_nfe_to_phenotypes_table}
+
+nfe_phenotypes.df <- as.data.frame(matrix(rep(NA,198*28), nrow=198))
+colnames(nfe_phenotypes.df) <- colnames(phenotypes.df)
+
+nfe_ids <- colnames(gt.mx)[1:198]
+nfe_phenotypes.df$wes_id <- nfe_ids
+rownames(nfe_phenotypes.df) <- nfe_ids
+"pass" -> nfe_phenotypes.df$filter
+-1 -> nfe_phenotypes.df$cc
+
+phenotypes.df <- rbind(nfe_phenotypes.df, phenotypes.df)
+
+summary(as.factor(phenotypes.df$filter))
+
+dim(gt.mx)
+dim(phenotypes.df)
+dim(variants.df)
+
+rm(nfe_ids, nfe_phenotypes.df)
+
+```
+
+# data_summary
+
+```{r data_summary}
+
+ls()
+
+dim(gt.mx)
+class(gt.mx)
+gt.mx[1:5,1:5]
+
+dim(phenotypes.df)
+str(phenotypes.df)
+phenotypes.df[1:5,1:5]
+
+dim(variants.df)
+colnames(variants.df)
+variants.df[1:5,1:5]
+
+dim(kgen.df)
+colnames(kgen.df)
+kgen.df[1:5,1:5]
+
+dim(exac.df)
+colnames(exac.df)
+exac.df[1:5,1:5]
+
+# Check consistency of rownames
+sum(rownames(gt.mx) != rownames(variants.df))
+sum(rownames(gt.mx) != rownames(kgen.df))
+sum(rownames(gt.mx) != rownames(exac.df))
+
+```
+
+# save_data
+
+```{r save_data}
+
+save.image(paste(interim_data_folder, "r03_consolidate_phenotype_data_jan2016.RData", sep="/"))
+
+```
+
+# final_section
+
+```{r final_section}
+
+ls()
+sessionInfo()
+Sys.time()
+
+```

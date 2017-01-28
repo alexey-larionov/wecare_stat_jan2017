@@ -1,0 +1,394 @@
+---
+title: "Calculate glm for individual variants, wecare feb2016"
+author: "Alexey Larionov"
+output: html_document
+params:
+  interim_data: ""
+  subset: ""
+  results_folder: ""
+---
+
+started: Mar2016  
+last_updated: 11Aug2016
+
+# Summary
+
+Calculates CBC vs UBC glm for each variant
+
+# start_section
+
+```{r start_section}
+
+# Start time
+Sys.time()
+
+# Do NOT clean-up at this stage
+#rm(list=ls()) # this would remove params object!
+graphics.off()
+
+# Read parameters
+interim_data_folder <- params$interim_data
+data_subset <- params$subset
+results_folder <- params$results_folder
+
+library(statmod) # for glm.scoretest
+
+# For debugging
+#rm(list=ls())
+#interim_data_folder <- "/scratch/medgen/users/alexey/wecare_aug2016/interim_data"
+#data_subset <- "priority_genes_strict"
+#results_folder <- "/scratch/medgen/users/alexey/wecare_aug2016/results"
+#setwd("/scratch/medgen/scripts/wecare_skat_08.16/scripts")
+
+# Check subset
+if (! data_subset %in% c("strict", "std.1", "std.2", "relaxed", "priority_genes_relaxed", "priority_genes_strict", "all_variants")){
+  print("Wrong data subset")
+  stop
+}
+
+```
+
+# load_and_check_data
+
+```{r load_and_check_data}
+
+# Select data for the subset
+
+if(data_subset == "strict"){
+  source_data_file <- paste(interim_data_folder, "s06_recalculate_afs_str_feb2016.RData", sep="/")
+}
+
+if(data_subset == "std.1"){
+  source_data_file <- paste(interim_data_folder, "s06_recalculate_afs_std1_feb2016.RData", sep="/")
+}
+
+if(data_subset == "std.2"){
+  source_data_file <- paste(interim_data_folder, "s06_recalculate_afs_std2_feb2016.RData", sep="/")
+}
+
+if(data_subset == "relaxed"){
+  source_data_file <- paste(interim_data_folder, "s06_recalculate_afs_rel_feb2016.RData", sep="/")
+}
+
+if(data_subset == "priority_genes_relaxed"){
+  source_data_file <- paste(interim_data_folder, "s06_recalculate_afs_pri_rel_feb2016.RData", sep="/")
+}
+
+if(data_subset == "priority_genes_strict"){
+  source_data_file <- paste(interim_data_folder, "s06_recalculate_afs_pri_str_feb2016.RData", sep="/")
+}
+
+if(data_subset == "all_variants"){
+  source_data_file <- paste(interim_data_folder, "s06_recalculate_afs_all_feb2016.RData", sep="/")
+}
+
+data_subset
+source_data_file
+
+# Remove params object to avoid interference with load() function
+rm(params)
+
+load(file=source_data_file)
+ls()
+
+# Remove irrelevant data files from the previous step
+rm(source_data_file, interim_data_file)
+
+dim(genotypes.mx)
+genotypes.mx[1:5,1:5]
+
+dim(phenotypes.df)
+colnames(phenotypes.df)
+str(phenotypes.df)
+phenotypes.df[1:5,1:5]
+
+dim(variants.df)
+colnames(variants.df)
+str(variants.df)
+variants.df[1:5,1:5]
+
+# Check consistence of tables
+sum(rownames(genotypes.mx) != rownames(variants.df))
+sum(colnames(genotypes.mx) != rownames(phenotypes.df))
+
+```
+
+# calculate_associations_per_variant
+
+To discuss with Dave and Marc:  
+How to deal with NAs in histology, ER etc?
+
+```{r calculate_associations_per_variant}
+
+#---------------------------------------------------#
+#      Prepare phenotypes vector for the model      #
+#---------------------------------------------------#
+
+phenotypes <- as.vector(phenotypes.df$cc)
+names(phenotypes) <- rownames(phenotypes.df)
+
+#---------------------------------------------------#
+#         Prepare covariates for the model          #
+#---------------------------------------------------#
+
+# --- Tumour --- #
+
+#summary(phenotypes.df$hist_cat)
+lobular <- as.numeric(phenotypes.df$hist_cat == "lobular")
+#ductal <- as.numeric(phenotypes.df$hist_cat == "ductal")
+#medullary <- as.numeric(phenotypes.df$hist_cat == "medullary")
+#er1 <- phenotypes.df$er1
+stage <- phenotypes.df$stage
+
+# --- Treatment --- #
+
+hormone <- phenotypes.df$hormone == 1
+#xray <- phenotypes.df$br_xray_dose
+#summary(phenotypes.df$chemo_cat)
+#cmf <- as.numeric(phenotypes.df$chemo_cat == "CMF")
+#other_cytotoxic <- as.numeric(phenotypes.df$chemo_cat == "Oth")
+#no_cytotoxc <- as.numeric(phenotypes.df$chemo_cat == "no")
+chemo <- phenotypes.df$chemo_cat != "no"
+
+treatment <- as.numeric(hormone | chemo)
+
+# --- Host --- #
+
+num_preg <- phenotypes.df$num_preg
+#BMI_dx <- phenotypes.df$BMI_dx
+
+# --- Etnisity --- #
+
+eigen1 <- phenotypes.df$Eigen_1
+eigen2 <- phenotypes.df$Eigen_2
+eigen3 <- phenotypes.df$Eigen_3
+
+# --- Complie covariates to numerical matrix --- #
+
+covariates=cbind(lobular, stage, treatment, num_preg, 
+                 eigen1, eigen2, eigen3)
+
+colnames(covariates) <- c("lobular", "stage", "treatment", "num_preg", 
+                          "eigen1", "eigen2", "eigen3")
+
+rownames(covariates) <- rownames(phenotypes.df)
+
+# --- Clean-up --- #
+
+rm(lobular, stage, hormone, chemo, treatment, num_preg, eigen1, eigen2, eigen3)
+
+#---------------------------------------------------#
+#               Calculate the model                 #
+#---------------------------------------------------#
+
+# Add header to the output table
+variants_assoc.mx.chr <- c("Variant", "N_Cases", "Alt_Alleles_Count", "UBC_Alt_Alleles_Count", "CBC_Alt_Alleles_Count", "Effect", "SE", "P_Wald", "P_LRT", "P_Score")
+
+# For each variant (takes ~5min for ~20k variants x ~ 400 cases)
+for ( variant in rownames(genotypes.mx) ) {
+  
+  # Get genotypes
+  #variant="var000024626"
+  genotypes <- genotypes.mx[variant,]
+
+  # Fit model including genotype
+  # This model includes a minimal set of factors only
+  # How to handle missed values ???
+  glm.geno <- glm(phenotypes ~ genotypes + covariates, 
+    family = binomial(link = "logit"))
+  
+  #summary(glm.geno)
+  #str(glm.geno$model)
+  cases.included <- nrow(glm.geno$model)
+  genotypes.in.model <- glm.geno$model$genotype
+  alt.alleles.count <- sum(genotypes.in.model)
+  
+  # Calculate null-model w/o genotype
+  glm.null <- glm(phenotypes ~ covariates, 
+    subset=!is.na(genotypes),
+    family = binomial(link = "logit"))
+
+  #summary(glm.null)
+  #dim(glm.null$model)
+  #str(glm.null$model)
+  
+  # Estimate difference between models
+	chi.stat.LRT = 2*(logLik(glm.geno) - logLik(glm.null))
+	P.LRT = 1 - pchisq(chi.stat.LRT, df=1)
+	
+	# Test for adding genotype to a GLM
+	Score.Z = glm.scoretest(glm.null, genotypes.in.model, dispersion=NULL)
+	P.Score = 2 * (1 - pnorm(abs(Score.Z)))
+	
+	# Estimate, SE and P.Wald
+	if ("genotype" %in% rownames(summary(glm.geno)$coefficients)){
+		Effect <- coef(summary(glm.geno))["genotype", "Estimate"]
+		SE <- coef(summary(glm.geno))["genotype", "Std. Error"]
+		P.Wald <- coef(summary(glm.geno))["genotype", "Pr(>|z|)"]
+	}	else {
+		Effect <- NA
+		SE <- NA
+		P.Wald <- NA
+  }
+
+	ubc.alt.alleles.count <- variants.df[variant,"AC_UBC"]
+	cbc.alt.alleles.count <- variants.df[variant,"AC_CBC"]
+	
+	# Summarise and format results
+  results <- c(variant, 
+        cases.included, 
+        alt.alleles.count, 
+        ubc.alt.alleles.count, 
+        cbc.alt.alleles.count, 
+        round(Effect,3), 
+        round(SE, 3), 
+        format(P.Wald, scientific=T, digits=3), 
+        format(P.LRT, scientific=T, digits=3), 
+        format(P.Score, scientific=T, digits=3))
+
+  # Add to output table
+  variants_assoc.mx.chr <- rbind(variants_assoc.mx.chr, results)
+
+}
+
+# Clean-up
+rm(phenotypes, genotypes, covariates)
+
+rm(variant, cases.included, genotypes.in.model, alt.alleles.count, ubc.alt.alleles.count, 
+   cbc.alt.alleles.count, Effect, SE, P.Wald, P.LRT, P.Score, chi.stat.LRT, Score.Z, results, 
+   glm.geno, glm.null)
+
+```
+
+# reshape_results_matrix
+
+```{r reshape_results_matrix}
+
+# Check dimentions
+dim(variants_assoc.mx.chr)
+
+# Make proper colnames
+colnames(variants_assoc.mx.chr) <- variants_assoc.mx.chr[1,]
+variants_assoc.mx.chr <- variants_assoc.mx.chr[-1,]
+
+# Make proper rownames
+rownames(variants_assoc.mx.chr) <- variants_assoc.mx.chr[,1]
+variants_assoc.mx.chr <- variants_assoc.mx.chr[,-1]
+
+# Convert to numeric
+variants_assoc.mx <- matrix(
+  as.numeric(variants_assoc.mx.chr), 
+  nrow=nrow(variants_assoc.mx.chr))
+
+colnames(variants_assoc.mx) <- colnames(variants_assoc.mx.chr)
+rownames(variants_assoc.mx) <- rownames(variants_assoc.mx.chr)
+
+NA -> variants_assoc.mx[is.nan(variants_assoc.mx)]
+
+# Convert mx to df
+variants_assoc.df <- as.data.frame(variants_assoc.mx)
+variants_assoc.df <- cbind(rownames(variants_assoc.df), variants_assoc.df)
+"VarID" -> colnames(variants_assoc.df)[1]
+
+# Clean-up
+rm(variants_assoc.mx.chr, variants_assoc.mx)
+
+```
+
+# explore_results
+
+```{r explore_results}
+
+library(dplyr)
+
+# Explore numbers of cases
+min(variants_assoc.df$N_Cases)
+max(variants_assoc.df$N_Cases)
+hist(variants_assoc.df$N_Cases)
+
+# Explore frequencies of variants
+min(variants_assoc.df$Alt_Alleles_Count)
+max(variants_assoc.df$Alt_Alleles_Count)
+x <- sort(table(variants_assoc.df$Alt_Alleles_Count), decreasing = TRUE)
+x[1:10]
+x <- variants_assoc.df %>% select(Alt_Alleles_Count) %>% filter(Alt_Alleles_Count<10) 
+hist(x[,1])
+
+# Variants with strongest risk association
+# (only if genotype is selected to be included into the model)
+x <- variants_assoc.df %>% filter(Effect > 0) %>% arrange(P_LRT) %>% head(10)
+x
+x <- as.vector(x[,1])
+variants.df[x,] %>% select(VarID, SYMBOL, TYPE, Consequence, CLIN_SIG)
+variants.df[x,] %>% select(VarID, SYMBOL, EUR_MAF_Fraction, AF_UBC, AF_CBC)
+variants.df[x,] %>% select(VarID, SYMBOL, EUR_MAF_Fraction, AF_USBC, AF_CFBC)
+
+# Variants with strongest protective association
+# (only if genotype is selected to be included into the model)
+x <- variants_assoc.df %>% filter(Effect < 0) %>% arrange(P_LRT) %>% head(10)
+x
+x <- as.vector(x[,1])
+variants.df[x,] %>% select(VarID, SYMBOL, TYPE, Consequence, CLIN_SIG)
+variants.df[x,] %>% select(VarID, SYMBOL, EUR_MAF_Fraction, AF_UBC, AF_CBC)
+variants.df[x,] %>% select(VarID, SYMBOL, EUR_MAF_Fraction, AF_USBC, AF_CFBC)
+
+# No significance after Bernulli correction
+17310 * 7.07e-05
+
+# Clean-up
+rm(x)
+
+```
+
+# save_results_and_data
+
+```{r save_data}
+
+if(data_subset == "strict"){
+  interim_data_file <- paste(interim_data_folder, "s07_variants_glm_str_feb2016.RData", sep="/")
+  results_file <- paste(results_folder, "s07_variants_glm_str_feb2016.txt", sep="/")
+}
+
+if(data_subset == "std.1"){
+  interim_data_file <- paste(interim_data_folder, "s07_variants_glm_std1_feb2016.RData", sep="/")
+  results_file <- paste(results_folder, "s07_variants_glm_std1_feb2016.txt", sep="/")
+}
+
+if(data_subset == "std.2"){
+  interim_data_file <- paste(interim_data_folder, "s07_variants_glm_std2_feb2016.RData", sep="/")
+  results_file <- paste(results_folder, "s07_variants_glm_std2_feb2016.txt", sep="/")
+}
+
+if(data_subset == "relaxed"){
+  interim_data_file <- paste(interim_data_folder, "s07_variants_glm_rel_feb2016.RData", sep="/")
+  results_file <- paste(results_folder, "s07_variants_glm_rel_feb2016.txt", sep="/")
+}
+
+if(data_subset == "priority_genes_relaxed"){
+  interim_data_file <- paste(interim_data_folder, "s07_variants_glm_pri_rel_feb2016.RData", sep="/")
+  results_file <- paste(results_folder, "s07_variants_glm_pri_rel_feb2016.txt", sep="/")
+}
+
+if(data_subset == "priority_genes_strict"){
+  interim_data_file <- paste(interim_data_folder, "s07_variants_glm_pri_str_feb2016.RData", sep="/")
+  results_file <- paste(results_folder, "s07_variants_glm_pri_str_feb2016.txt", sep="/")
+}
+
+if(data_subset == "all_variants"){
+  interim_data_file <- paste(interim_data_folder, "s07_variants_glm_all_feb2016.RData", sep="/")
+  results_file <- paste(results_folder, "s07_variants_glm_all_feb2016.txt", sep="/")
+}
+
+save.image(file=interim_data_file)
+write.table(variants_assoc.df, file=results_file, quote=FALSE, sep="\t")
+
+```
+
+# final_section
+
+```{r final_section}
+
+sessionInfo()
+Sys.time()
+  
+```

@@ -1,0 +1,58 @@
+---
+title: "SKAT_accessory_functions_descriptions"
+author: "AL"
+date: "July 22, 2016"
+output: html_document
+---
+
+## prepare_tables_for_results
+
+**Call**  
+prepare_tables_for_results  
+  (prefix, report_type = "summary_only"|"full", path="")
+
+**Example**  
+prepare_tables_for_results  
+  ("analysis_X", report_type = "full", path="tmp/")
+
+## run_tests_for_multiple_variants
+
+**Call**  
+run_tests_for_multiple_variants  
+  (set.name, phenotypes, covariates, genotypes)
+  
+**Example**  
+skat.test <- run_tests_for_multiple_variants
+  ("gene_Y", phenotypes, covariates, genotypes)
+
+## print_results_for_multiple_variants
+
+**Call**  
+print_results_for_multiple_variants  
+  (data, prefix, report_type = "summary_only"|"full", path="")
+
+**Example**  
+print_results_for_multiple_variants(
+  skat.test, "analysis_X", report_type = "full", path="tmp/")
+
+## run_single_variant_test
+
+**Call**  
+run_single_variant_test  
+  (set.name, phenotypes, covariates, variant)
+
+**Example**  
+variant_Z <- as.vector(genotypes[,Z])  
+var.skat.test <- run_single_variant_test  
+  ("var_Z", phenotypes, covariates, variant_Z)
+
+## print_results_for_single_variant
+
+**Call**  
+print_results_for_single_variant  
+  (data, prefix, report_type = "summary_only"|"full", path="")
+  
+**Example**  
+print_results_for_single_variant(
+  var.skat.test, "analysis_X", report_type = "full", path="tmp/")
+
