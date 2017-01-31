@@ -1,0 +1,41 @@
+Job name: smartpca
+Allocated node: sand-2-2
+Initial working folder:
+/scratch/medgen/scripts/wecare_stat_01.17/scripts
+
+ ------------------ Output ------------------ 
+
+Run smartpca and make PCA plots using EIGENSRAT package
+
+Started u01_run_smartpca.sh: 30Jan2017_15:17:35
+
+Files and folders
+parameters_file: u01_wecare_only_480_226k_eigenstrat_default_outliers.par
+populations_to_plot: UBC:CBC
+
+analysis: u01_wecare_only_480_226k_eigenstrat_default_outliers
+working_folder: /scratch/medgen/scripts/wecare_stat_01.17/scripts
+data_folder: /scratch/medgen/scripts/wecare_stat_01.17/interim_data
+output_folder: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/u01_wecare_only_480_226k_eigenstrat_default_outliers
+ 
+evec_file: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/u01_wecare_only_480_226k_eigenstrat_default_outliers/u01_wecare_only_480_226k_eigenstrat_default_outliers.evec
+smartpca_log: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/u01_wecare_only_480_226k_eigenstrat_default_outliers/u01_wecare_only_480_226k_eigenstrat_default_outliers.log
+gnuplot_file: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/u01_wecare_only_480_226k_eigenstrat_default_outliers/u01_wecare_only_480_226k_eigenstrat_default_outliers.xtxt
+
+Parameters file:
+genotypename: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/wecare_only_480_226k.geno
+snpname: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/wecare_only_480_226k.snp
+indivname: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/wecare_only_480_226k.ind
+evecoutname: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/u01_wecare_only_480_226k_eigenstrat_default_outliers/u01_wecare_only_480_226k_eigenstrat_default_outliers.evec
+evaloutname: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/u01_wecare_only_480_226k_eigenstrat_default_outliers/u01_wecare_only_480_226k_eigenstrat_default_outliers.eval
+genotypeoutname: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/u01_wecare_only_480_226k_eigenstrat_default_outliers/u01_wecare_only_480_226k_eigenstrat_default_outliers.geno
+snpoutname: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/u01_wecare_only_480_226k_eigenstrat_default_outliers/u01_wecare_only_480_226k_eigenstrat_default_outliers.snp
+indivoutname: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/u01_wecare_only_480_226k_eigenstrat_default_outliers/u01_wecare_only_480_226k_eigenstrat_default_outliers.ind
+outlieroutname: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/u01_wecare_only_480_226k_eigenstrat_default_outliers/u01_wecare_only_480_226k_eigenstrat_default_outliers.outliers
+outputformat: EIGENSTRAT
+altnormstyle: NO
+
+## number of fields: 12
+UBC:CBC
+Completed: 30Jan2017_15:19:42
+

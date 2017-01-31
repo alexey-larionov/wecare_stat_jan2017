@@ -1,0 +1,64 @@
+---
+title: "SKAT_power_estimates"
+output: html_document
+---
+
+author: AL  
+date: 31Jan2017  
+
+This calculation uses data simulated for people of european ancestry.  It estimates power of a standard SKAT procedure that aggregates rare variants over a genomic region.  It produces table for different p-levels and different population sizes.  
+
+It is not yet clear to me  
+- how the p-values used in simulation are related to the (very) different p-values reported by SKAT under different assumptions?  
+- whether the used p-values account tor multiple testing?  
+
+The simulation below uses the following (optimistic) assumptions:
+
+### Case.Prop = 0.5
+50 % of samples are cases and 50 % of samples are controls
+
+### Region size = 3kb
+~ average size of a gene coding sequence
+
+### Causal.MAF.Cutoff = 3% (default)
+Only SNPs that have MAFs < Causal.MAF.Cutoff may be causal
+
+###	Causal percent = 20% (default - optimistic?)
+Percent of rare SNPs (MAF < Causal.MAF.Cutoff) that are casual.  
+
+It is not clear whether this is  
+- A percent of casual SNPs amongst all rare variants. In this case 20% would be grossly excessive.  
+- A percent of casual SNPs in a "significant" region. In this case 20% would be more acceptable; though the simulation would need another parameter for number of "significant" regions?
+
+###	Negative percent = 0% (default)
+Percent of causal variants that have negative effect to the phenotype.  In other words, the below simulation assumes that all variants have effect to the same direction. 
+
+### MaxOR = 2 (optimistic)
+### OR.Type = "Fixed"
+Odds ratio for simulated casual variants is fixed = 2 (~ as reported for CHEK2).  The default (MaxOR = 5 and OR.Type = "Log") would make OR non-transparent and dependent on AF.  
+
+```{r}
+
+# Load SKAT library
+library(SKAT)
+
+# Explore simulated haplotypes
+data("SKAT.haplotypes")
+SKAT.haplotypes$Haplotype[1:5,1:10]
+SKAT.haplotypes$SNPInfo[1:5,]
+
+# Calculate powers ofr different sample sizes and significance levels
+powers <- Power_Logistic(
+  Case.Prop=0.5, 
+  SubRegion.Length=3000, 
+  Causal.Percent= 20, 
+  N.Sim=100, 
+  MaxOR=2, OR.Type = "Fixed")
+
+powers
+
+#	Calculate the required sample sizes to achieve 80% power
+Get_RequiredSampleSize(powers, Power=0.8)
+
+```
+

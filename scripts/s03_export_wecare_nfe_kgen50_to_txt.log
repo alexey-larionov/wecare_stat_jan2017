@@ -1,0 +1,46 @@
+Job name: export_wecare_nfe_kgen50_to_txt
+Allocated node: sand-3-17
+Initial working folder:
+/scratch/medgen/scripts/wecare_stat_01.17/scripts
+
+ ------------------ Output ------------------ 
+
+Export wecare_nfe_kgen50 vcf file to plain text tables for downstream analysis in R
+Started s02_export_wecare_nfe_kgen50_to_txt.sh: 31Jan2017_22:24:29
+
+Tools and resources:
+java: /scratch/medgen/tools/java/jre1.8.0_40/bin/java
+gatk360: /scratch/medgen/tools/gatk/gatk-3.7-0/GenomeAnalysisTK.jar
+ref_genome: /scratch/medgen/resources/gatk_bundle/b37/decompressed/human_g1k_v37.fasta
+
+Files and folders:
+working_folder: /scratch/medgen/scripts/wecare_stat_01.17/scripts
+data_folder: /scratch/medgen/scripts/wecare_stat_01.17/interim_data
+wecare_nfe_kgen50_vcf: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/wecare_nfe_kgen50_filt.vcf
+
+vcf_txt: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/wecare_nfe_kgen50_filt_vcf.txt
+vcf_log: /scratch/medgen/scripts/wecare_stat_01.17/scripts/s03_wecare_nfe_kgen50_filt_vcf_to_txt.log
+
+gt_txt: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/wecare_nfe_kgen50_filt_gt.txt
+gt_log: /scratch/medgen/scripts/wecare_stat_01.17/scripts/s03_wecare_nfe_kgen50_filt_gt_to_txt.log
+
+gq_txt: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/wecare_nfe_kgen50_filt_gq.txt
+gq_log: /scratch/medgen/scripts/wecare_stat_01.17/scripts/s03_wecare_nfe_kgen50_filt_gq_to_txt.log
+
+dp_txt: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/wecare_nfe_kgen50_filt_dp.txt
+dp_log: /scratch/medgen/scripts/wecare_stat_01.17/scripts/s03_wecare_nfe_kgen50_filt_dp_to_txt.log
+
+Started exporting VCF table
+Completed exporting VCF table: 31Jan2017_22:24:53
+
+Started exporting GT table
+Completed exporting GT table: 31Jan2017_22:26:42
+
+Started exporting GQ table
+Completed exporting GQ table: 31Jan2017_22:28:18
+
+Started exporting DP table
+Completed exporting DP table: 31Jan2017_22:29:54
+
+Done all tasks
+

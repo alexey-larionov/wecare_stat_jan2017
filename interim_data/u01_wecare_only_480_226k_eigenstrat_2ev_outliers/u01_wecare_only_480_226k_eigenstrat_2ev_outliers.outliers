@@ -1,0 +1,11 @@
+REMOVED outlier P1_C12 iter 1 evec 0 sigmage 7.399 pop: UBC
+REMOVED outlier P1_D08 iter 1 evec 0 sigmage 6.088 pop: UBC
+REMOVED outlier P1_E06 iter 1 evec 1 sigmage -20.347 pop: CBC
+REMOVED outlier P5_E09 iter 1 evec 0 sigmage 10.721 pop: CBC
+REMOVED outlier P6_D05 iter 1 evec 0 sigmage 12.219 pop: CBC
+REMOVED outlier P1_C05 iter 2 evec 0 sigmage -14.090 pop: UBC
+REMOVED outlier P2_E06 iter 2 evec 0 sigmage -6.487 pop: UBC
+REMOVED outlier P5_E02 iter 3 evec 1 sigmage 8.020 pop: CBC
+REMOVED outlier P5_E07 iter 3 evec 1 sigmage 18.137 pop: UBC
+REMOVED outlier P1_C09 iter 4 evec 1 sigmage -20.352 pop: CBC
+REMOVED outlier P3_C03 iter 5 evec 1 sigmage 18.733 pop: UBC

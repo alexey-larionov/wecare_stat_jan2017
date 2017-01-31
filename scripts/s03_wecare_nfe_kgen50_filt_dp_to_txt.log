@@ -1,0 +1,26 @@
+INFO  22:28:20,400 HelpFormatter - ---------------------------------------------------------------------------------- 
+INFO  22:28:20,402 HelpFormatter - The Genome Analysis Toolkit (GATK) v3.7-0-gcfedb67, Compiled 2016/12/12 11:21:18 
+INFO  22:28:20,402 HelpFormatter - Copyright (c) 2010-2016 The Broad Institute 
+INFO  22:28:20,402 HelpFormatter - For support and documentation go to https://software.broadinstitute.org/gatk 
+INFO  22:28:20,402 HelpFormatter - [Tue Jan 31 22:28:20 GMT 2017] Executing on Linux 2.6.32-573.38.1.el6.x86_64 amd64 
+INFO  22:28:20,403 HelpFormatter - Java HotSpot(TM) 64-Bit Server VM 1.8.0_40-b26 
+INFO  22:28:20,406 HelpFormatter - Program Args: -T VariantsToTable -R /scratch/medgen/resources/gatk_bundle/b37/decompressed/human_g1k_v37.fasta -V /scratch/medgen/scripts/wecare_stat_01.17/interim_data/wecare_nfe_kgen50_filt.vcf -o /scratch/medgen/scripts/wecare_stat_01.17/interim_data/wecare_nfe_kgen50_filt_dp.txt -F CHROM -F POS -F kgenVarID -F SplitVarID -GF DP -AMD 
+INFO  22:28:20,411 HelpFormatter - Executing as al720@sand-3-17 on Linux 2.6.32-573.38.1.el6.x86_64 amd64; Java HotSpot(TM) 64-Bit Server VM 1.8.0_40-b26. 
+INFO  22:28:20,411 HelpFormatter - Date/Time: 2017/01/31 22:28:20 
+INFO  22:28:20,411 HelpFormatter - ---------------------------------------------------------------------------------- 
+INFO  22:28:20,411 HelpFormatter - ---------------------------------------------------------------------------------- 
+INFO  22:28:20,422 GenomeAnalysisEngine - Strictness is SILENT 
+INFO  22:28:20,508 GenomeAnalysisEngine - Downsampling Settings: Method: BY_SAMPLE, Target Coverage: 1000 
+INFO  22:28:20,703 GenomeAnalysisEngine - Preparing for traversal 
+INFO  22:28:20,707 GenomeAnalysisEngine - Done preparing for traversal 
+INFO  22:28:20,708 ProgressMeter - [INITIALIZATION COMPLETE; STARTING PROCESSING] 
+INFO  22:28:20,708 ProgressMeter -                 | processed |    time |    per 1M |           |   total | remaining 
+INFO  22:28:20,708 ProgressMeter -        Location |     sites | elapsed |     sites | completed | runtime |   runtime 
+INFO  22:28:50,711 ProgressMeter -     5:147807364     33346.0    30.0 s      15.0 m       33.2%    90.0 s      60.0 s 
+INFO  22:29:20,712 ProgressMeter -     12:53238356     69885.0    60.0 s      14.3 m       64.6%    92.0 s      32.0 s 
+INFO  22:29:50,713 ProgressMeter -     20:61039958    106265.0    90.0 s      14.1 m       89.6%   100.0 s      10.0 s 
+INFO  22:29:54,396 ProgressMeter -            done    110891.0    93.0 s      14.1 m       92.9%   100.0 s       7.0 s 
+INFO  22:29:54,396 ProgressMeter - Total runtime 93.69 secs, 1.56 min, 0.03 hours 
+------------------------------------------------------------------------------------------
+Done. There were no warn messages.
+------------------------------------------------------------------------------------------

@@ -1,0 +1,180 @@
+---
+title: "compare_eigenvectors_wecare_only_jan2017"
+output: html_document
+---
+
+started: Alexey Larionov, 30Jan2017  
+last updated: Alexey Larionov, 30Jan2017
+
+# Summary
+
+1) Compare eigenvectors calculated by R and by Eigenstrat PCA  
+  - using wecare only dataset w/o removing outliers (outliermode 2)  
+  - using Price 2006 normalising (altnormstyle NO)  
+
+# start_section
+
+```{r start_section}
+
+# Time stamp
+Sys.time()
+
+# Folders
+setwd("/scratch/medgen/scripts/wecare_stat_01.17/scripts")
+interim_data_folder <- "/scratch/medgen/scripts/wecare_stat_01.17/interim_data"
+
+# Required libraries
+library(dplyr)
+library(ggplot2)
+library(plotly)
+
+```
+
+# read_data
+
+```{r read_data}
+
+# --- r-calculated data --- #
+
+load(paste(interim_data_folder, "r05_calculate_egenvectors_wecare_only_jan2017.RData", sep="/"))
+
+rm(wecare_exac.df, wecare_genotypes.mx, wecare_kgen.df, wecare_nfe_exac.df, wecare_nfe_genotypes.mx, wecare_nfe_kgen.df, wecare_nfe_phenotypes.df, wecare_nfe_variants.df, wecare_phenotypes.df, wecare_variants.df)
+
+# eigenvectors
+r_evectors.df <- as.data.frame(wecare_eigen$vectors[,1:10])
+
+colnames(r_evectors.df) <- c("r_ev1", "r_ev2", "r_ev3", "r_ev4", "r_ev5", "r_ev6", "r_ev7", "r_ev8", "r_ev9", "r_ev10")
+str(r_evectors.df)
+
+# Common sence checks (using properties of eigenvectors)
+apply(r_evectors.df,2,sum) # should be close to zeros
+apply(r_evectors.df,2,function(x){sum(x^2)}) # should be close to ones
+
+# eigenvalues
+r_evalues.df <- as.data.frame(wecare_eigen$values)
+colnames(r_evalues.df) <- "evals"
+plot(r_evalues.df$evals)
+
+# --- es-calculated data --- #
+
+es_evectors_file="/scratch/medgen/scripts/wecare_stat_01.17/interim_data/u01_wecare_only_480_226k_eigenstrat_no_outliers/u01_wecare_only_480_226k_eigenstrat_no_outliers.evec"
+
+es_evectors.df <- read.table(es_evectors_file)
+
+colnames(es_evectors.df) <- c("wes_id", "es_ev1", "es_ev2", "es_ev3", "es_ev4", "es_ev5", "es_ev6", "es_ev7", "es_ev8", "es_ev9", "es_ev10", "group")
+
+str(es_evectors.df)
+
+# Common sence checks (using properties of eigenvectors)
+apply(es_evectors.df[,2:11],2,sum) # should be close to zeros
+apply(es_evectors.df[,2:11],2,function(x){sum(x^2)}) # should be close to ones
+
+es_evalues_file <- "/scratch/medgen/scripts/wecare_stat_01.17/interim_data/u01_wecare_only_480_226k_eigenstrat_no_outliers/u01_wecare_only_480_226k_eigenstrat_no_outliers.eval"
+
+es_evalues.df <- read.table(es_evalues_file)
+colnames(es_evalues.df) <- "evals"
+str(es_evalues.df)
+plot(es_evalues.df$evals)
+
+rm(es_evectors_file, es_evalues_file)
+
+```
+
+# compare_evalues
+
+```{r compare_evalues}
+
+plot(es_evalues.df$evals, r_evalues.df$evals, main="eigenvalues: R vs EIGENSTRAT")
+
+abline(c(0,0),c(1,1), col="red")
+
+```
+
+# compare_evectors
+
+```{r compare_evectors}
+
+plot(es_evectors.df$es_ev1, r_evectors.df$r_ev1 , main="1st eigenvectors: R vs EIGENSTRAT")
+abline(c(0,0),c(1,1), col="red")
+
+# Prepare dataframe
+joined_evectors.df <- cbind(es_evectors.df, r_evectors.df)
+
+# Prepare colour scale
+colours <- c("UBC" = "BLUE", "CBC" = "RED")
+userColourScale <- scale_colour_manual(values=colours)
+
+# --- 1st eigenvectors --- #
+
+# Non-interactive plot
+ggplot(joined_evectors.df, aes(es_ev1, r_ev1)) +
+  geom_point(aes(colour=group, fill=group)) + 
+  labs(title="1st eigenvectors: R vs EIGENSTRAT") +
+  geom_abline(colour = "brown", linetype = 2) + 
+  userColourScale
+
+# Interactive plot
+g <- ggplot(joined_evectors.df, aes(es_ev1, r_ev1)) +
+  geom_point(aes(colour=group, fill=group, text=wes_id)) + 
+  labs(title="1st eigenvectors: R vs EIGENSTRAT") +
+  geom_abline(colour = "brown", linetype = 2) + 
+  userColourScale
+
+ggplotly(g)
+
+# --- 2nd eigenvectors --- #
+
+# Non-interactive plot
+ggplot(joined_evectors.df, aes(es_ev2, r_ev2)) +
+  geom_point(aes(colour=group, fill=group)) + 
+  labs(title="2nd eigenvectors: R vs EIGENSTRAT") +
+  geom_abline(colour = "brown", linetype = 2) + 
+  userColourScale
+
+# Interactive plot
+g <- ggplot(joined_evectors.df, aes(es_ev2, r_ev2)) +
+  geom_point(aes(colour=group, fill=group, text=wes_id)) + 
+  labs(title="2nd eigenvectors: R vs EIGENSTRAT") +
+  geom_abline(colour = "brown", linetype = 2) + 
+  userColourScale
+
+ggplotly(g)
+
+# --- 3rd eigenvectors --- #
+
+# Non-interactive plot
+ggplot(joined_evectors.df, aes(es_ev3, r_ev3)) +
+  geom_point(aes(colour=group, fill=group)) + 
+  labs(title="3rd eigenvectors: R vs EIGENSTRAT") +
+  geom_abline(slope=-1, colour = "brown", linetype = 2) + 
+  userColourScale
+
+# Interactive plot
+g <- ggplot(joined_evectors.df, aes(es_ev3, r_ev3)) +
+  geom_point(aes(colour=group, fill=group, text=wes_id)) + 
+  labs(title="3rd eigenvectors: R vs EIGENSTRAT") +
+  geom_abline(slope = -1, colour = "brown", linetype = 2) + 
+  userColourScale
+
+ggplotly(g)
+
+```
+
+# save_data
+
+```{r save_data}
+
+rm(g)
+save.image(paste(interim_data_folder, "r05_compare_egenvectors_wecare_only_jan2017.RData", sep="/"))
+
+```
+
+# final_section
+
+```{r final_section}
+
+ls()
+sessionInfo()
+Sys.time()
+
+```

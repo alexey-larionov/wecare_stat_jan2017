@@ -1,0 +1,35 @@
+INFO  21:59:49,269 HelpFormatter - ---------------------------------------------------------------------------------- 
+INFO  21:59:49,282 HelpFormatter - The Genome Analysis Toolkit (GATK) v3.7-0-gcfedb67, Compiled 2016/12/12 11:21:18 
+INFO  21:59:49,282 HelpFormatter - Copyright (c) 2010-2016 The Broad Institute 
+INFO  21:59:49,283 HelpFormatter - For support and documentation go to https://software.broadinstitute.org/gatk 
+INFO  21:59:49,283 HelpFormatter - [Tue Jan 31 21:59:49 GMT 2017] Executing on Linux 2.6.32-573.38.1.el6.x86_64 amd64 
+INFO  21:59:49,283 HelpFormatter - Java HotSpot(TM) 64-Bit Server VM 1.8.0_40-b26 
+INFO  21:59:49,286 HelpFormatter - Program Args: -T SelectVariants -R /scratch/medgen/resources/gatk_bundle/b37/decompressed/human_g1k_v37.fasta -V /scratch/medgen/scripts/wecare_stat_01.17/interim_data/wecare_nfe_kgen50.vcf -o /scratch/medgen/scripts/wecare_stat_01.17/interim_data/wecare_nfe_kgen50_filt.vcf -select !empty(kgenVarID) and !empty(SplitVarID) -nt 12 
+INFO  21:59:49,322 HelpFormatter - Executing as al720@sand-1-31 on Linux 2.6.32-573.38.1.el6.x86_64 amd64; Java HotSpot(TM) 64-Bit Server VM 1.8.0_40-b26. 
+INFO  21:59:49,322 HelpFormatter - Date/Time: 2017/01/31 21:59:49 
+INFO  21:59:49,322 HelpFormatter - ---------------------------------------------------------------------------------- 
+INFO  21:59:49,322 HelpFormatter - ---------------------------------------------------------------------------------- 
+INFO  21:59:49,353 GenomeAnalysisEngine - Strictness is SILENT 
+INFO  21:59:51,012 GenomeAnalysisEngine - Downsampling Settings: Method: BY_SAMPLE, Target Coverage: 1000 
+INFO  21:59:51,440 MicroScheduler - Running the GATK in parallel mode with 12 total threads, 1 CPU thread(s) for each of 12 data thread(s), of 16 processors available on this machine 
+INFO  21:59:51,937 GenomeAnalysisEngine - Preparing for traversal 
+INFO  21:59:51,942 GenomeAnalysisEngine - Done preparing for traversal 
+INFO  21:59:51,942 ProgressMeter - [INITIALIZATION COMPLETE; STARTING PROCESSING] 
+INFO  21:59:51,942 ProgressMeter -                 | processed |    time |    per 1M |           |   total | remaining 
+INFO  21:59:51,943 ProgressMeter -        Location |     sites | elapsed |     sites | completed | runtime |   runtime 
+INFO  22:00:21,946 ProgressMeter -      2:22000812   6022323.0    30.0 s       4.0 s        8.7%     5.7 m       5.2 m 
+INFO  22:00:51,950 ProgressMeter -      3:71121278   1.2016544E7    60.0 s       4.0 s       18.2%     5.5 m       4.5 m 
+INFO  22:01:22,628 ProgressMeter -      4:87018511   1.8229908E7    90.0 s       4.0 s       25.1%     6.0 m       4.5 m 
+INFO  22:01:52,629 ProgressMeter -       6:2024763   2.4427181E7   120.0 s       4.0 s       34.3%     5.8 m       3.8 m 
+INFO  22:02:22,631 ProgressMeter -     7:106014380   3.0605353E7     2.5 m       4.0 s       43.2%     5.8 m       3.3 m 
+INFO  22:02:52,632 ProgressMeter -     9:105029114   3.892423E7     3.0 m       4.0 s       53.0%     5.7 m       2.7 m 
+INFO  22:03:25,036 ProgressMeter -     11:31141371   4.4165042E7     3.6 m       4.0 s       59.5%     6.0 m       2.4 m 
+INFO  22:03:55,037 ProgressMeter -     13:25035741   4.9506726E7     4.1 m       4.0 s       68.0%     6.0 m     114.0 s 
+INFO  22:04:25,038 ProgressMeter -     15:96078160   5.7599911E7     4.6 m       4.0 s       77.5%     5.9 m      79.0 s 
+INFO  22:04:55,039 ProgressMeter -     19:11232919   6.4255042E7     5.1 m       4.0 s       86.1%     5.9 m      48.0 s 
+INFO  22:05:23,192 SelectVariants - 18658184 records processed. 
+INFO  22:05:23,332 ProgressMeter -            done   7.0027006E7     5.5 m       4.0 s       99.8%     5.5 m       0.0 s 
+INFO  22:05:23,332 ProgressMeter - Total runtime 331.39 secs, 5.52 min, 0.09 hours 
+------------------------------------------------------------------------------------------
+Done. There were no warn messages.
+------------------------------------------------------------------------------------------
