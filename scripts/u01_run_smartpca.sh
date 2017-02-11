@@ -2,15 +2,16 @@
 
 # Runs smartpca and makes PCA plots using EIGENSRAT package
 # Started: Alexey Larionov, Nov 2016
-# Last updated: Alexey Larionov, 30Jan2017
+# Last updated: Alexey Larionov, 10Feb2017
 
 # Use:
-#u01_run_smartpca.sh parameters_file populations
-#u01_run_smartpca.sh wecare_only_480_226k_eigenstrat_default_outliers.par UBC:CBC
+#sbatch u01_run_smartpca.sh parameters_file populations
+#sbatch u01_run_smartpca.sh wecare_only_480_226k_eigenstrat_default_outliers.par UBC:CBC
 
 # Notes:
 # Before running the script
 # - Make sure that parameters file is consistent with the script
+# - It is not necessary to make the output folders: they will be created by the script
 # After running the script:
 # - Manually REMOVE COLONS ":" from the plots files names !!!
 #   Otherwise thiese files may not be opened/copied etc.

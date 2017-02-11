@@ -4,7 +4,7 @@ output: html_notebook
 ---
 
 started: Alexey Larionov, 31Jan2017
-last updated: Alexey Larionov, 31Jan2017
+last updated: Alexey Larionov, 02Feb2017
 
 # Notes
 
@@ -21,11 +21,21 @@ Sys.time()
 setwd("/scratch/medgen/scripts/wecare_stat_01.17/scripts")
 interim_data_folder <- "/scratch/medgen/scripts/wecare_stat_01.17/interim_data"
 
+# Libraries
+library(ggplot2)
+
 ```
 
 # read_data
 
 ```{r read_data}
+
+load(paste(interim_data_folder, "r04_filter_cases_jan2017.RData", sep="/"))
+filtered_wecare_nfe_cases <- colnames(wecare_nfe_genotypes.mx)
+rm(wecare_nfe_exac.df, wecare_nfe_kgen.df, wecare_nfe_phenotypes.df, wecare_nfe_variants.df, wecare_nfe_genotypes.mx)
+
+kgen50_cases.df <- read.table(paste(interim_data_folder, "kgen_selected_50_samples.txt", sep="/"))
+dim(kgen50_cases.df)
 
 vcf.df <- read.table(
   paste(interim_data_folder, "wecare_nfe_kgen50_filt_vcf.txt", sep="/"), 
@@ -49,71 +59,125 @@ dim(dp.df)
 
 ```
 
+# check_consistency_of_variants_and_make_var_ids
 
-```{r}
-# Update rownames, when necessary
-rownames(vv.df) <- vv.df[,1]
-rownames(kgen.df) <- kgen.df[,1]
-rownames(exac.df) <- exac.df[,1]
-rownames(BRCA1_BRCA2_PALB2_cases.df) <- BRCA1_BRCA2_PALB2_cases.df[,1]
+```{r check_consistency_of_variants_and_make_var_ids}
 
-# Update colnames, when necessary
-colnames(gt.df) <- sub(".GT", "", colnames(gt.df))
-colnames(gq.df) <- sub(".GQ", "", colnames(gq.df))
-colnames(dp.df) <- sub(".DP", "", colnames(dp.df))
+# Fields to use for var ids
+var_id_fields <- c("CHROM", "POS", "kgenVarID", "SplitVarID")
+
+# Function to generate var ids
+make_var_ids <- function(x){
+ chrom <- as.character(x$CHROM)
+ pos <- as.character(x$POS)
+ kgen <- as.character(x$kgenVarID)
+ split <- as.character(x$SplitVarID)
+ var_ids <- paste(chrom, pos, kgen, split, sep="_")
+ return(var_ids)
+}
+
+# Make va ids and check their consistency between the tables
+gt_var_ids <- make_var_ids(gt.df)
+gq_var_ids <- make_var_ids(gq.df)
+dp_var_ids <- make_var_ids(dp.df)
+vcf_var_ids <- make_var_ids(vcf.df)
+
+length(gt_var_ids)
+length(gq_var_ids)
+length(dp_var_ids)
+length(vcf_var_ids)
+
+sum(gt_var_ids != gq_var_ids)
+sum(gt_var_ids != dp_var_ids)
+sum(gt_var_ids != vcf_var_ids)
+
+gt_var_ids[1:5]
+
+# Assign rownames to the tables
+gt_var_ids -> rownames(gt.df)
+gt_var_ids -> rownames(gq.df)
+gt_var_ids -> rownames(dp.df)
+gt_var_ids -> rownames(vcf.df)
 
 # Clean-up
-rm(source_data_folder, prefix, covar_file, demographics_file, samples_file, vv_file, gt_file, gq_file, dp_file, kgen_file, exac_file, phenotypes_update_file, BRCA1_BRCA2_PALB2_cases_file)
+rm(var_id_fields, make_var_ids, gt_var_ids, gq_var_ids, dp_var_ids, vcf_var_ids)
 
 ```
 
-# check_data
+# remove_multiallelic_variants
 
-```{r check_data}
+```{r remove_multiallelic_variants}
+
+ma <- grepl(",", as.vector(vcf.df$ALT))
+
+sum(ma)
+
+gt.df <- gt.df[!ma,]
+gq.df <- gq.df[!ma,]
+dp.df <- dp.df[!ma,]
+vcf.df <- vcf.df[!ma,]
 
 dim(gt.df)
-str(gt.df, list.len=5)
-gt.df[1:5,1:5]
-
 dim(gq.df)
-str(gq.df, list.len=5)
-gq.df[1:5,1:5]
-
 dim(dp.df)
-str(dp.df, list.len=5)
-dp.df[1:5,1:5]
+dim(vcf.df)
 
-dim(covar.df)
-str(covar.df)
-covar.df[1:5,1:5]
+rm(ma)
 
-dim(samples.df)
-str(samples.df)
-samples.df[1:5,]
+```
 
-dim(demographics.df)
-str(demographics.df)
-demographics.df[1:5,1:5]
+# check_cases_consistency_select_cases_and_update_cases_names
 
-dim(phenotypes_update.df)
-str(phenotypes_update.df)
-phenotypes_update.df[1:5,1:5]
+```{r check_cases_consistency_select_cases_and_update_cases_names}
 
-dim(BRCA1_BRCA2_PALB2_cases.df)
-str(BRCA1_BRCA2_PALB2_cases.df)
-BRCA1_BRCA2_PALB2_cases.df[1:5,1:5]
+# Check consistency of cases in gt, gq and dp
+sum( sub(".GT$", "", colnames(gt.df)) != sub(".GQ$", "", colnames(gq.df)) )
+sum( sub(".GT$", "", colnames(gt.df)) != sub(".DP$", "", colnames(dp.df)) )
 
-dim(vv.df)
-str(vv.df)
-vv.df[1:5,1:5]
+# Edit cases names in gt, gq and dp tables
+cases_raw <- colnames(gt.df)
+cases_renamed <- sub(".variant2.GT", "_kgen", cases_raw)
+cases_renamed <- sub(".variant.GT", "", cases_renamed)
 
-dim(kgen.df)
-str(kgen.df)
-kgen.df[1:5,1:5]
+cases_renamed -> colnames(gt.df)
+cases_renamed -> colnames(gq.df)
+cases_renamed -> colnames(dp.df)
 
-dim(exac.df)
-str(exac.df)
-exac.df[1:5,1:5]
+# Check lists of cases within the gropups
+kgen50_cases <- grep(".variant2.GT", cases_raw, value=TRUE)
+length(kgen50_cases) # 50
+
+wecare_nfe_cases <- grep(".variant.GT", cases_raw, value=TRUE)
+length(wecare_nfe_cases) # 710
+
+wecare_cases <- grep("^P", wecare_nfe_cases, value=TRUE)
+length(wecare_cases) # 512
+
+nfe_cases <- grep("^[H,N]", wecare_nfe_cases, value=TRUE)
+length(nfe_cases) # 198
+
+# Check kgen50 and nfe overlap
+sum(kgen50_cases %in% nfe_cases) # 9
+# One kgen50 EUR (HG01704) was removed from our re-aligned NFE set
+# because of some odd QC metrics during our internal re-alignment
+
+# Update names of kgen cases
+kgen50_cases <- sub(".variant2.GT", "_kgen", kgen50_cases)
+
+# Select cases
+selected_cases <- c(kgen50_cases, filtered_wecare_nfe_cases)
+length(selected_cases) # 728 = 50 + 198 + 480
+
+# Update gt, gq and dp tables
+gt.df <- gt.df[,selected_cases]
+gq.df <- gq.df[,selected_cases]
+dp.df <- dp.df[,selected_cases]
+
+# Add rownames to kgen50_cases.df
+rownames(kgen50_cases.df) <- paste(kgen50_cases.df$V1, "kgen", sep="_")
+
+# Clean-up
+rm(cases_raw, cases_renamed, kgen50_cases, wecare_nfe_cases, wecare_cases, nfe_cases, selected_cases, filtered_wecare_nfe_cases)
 
 ```
 
@@ -121,80 +185,261 @@ exac.df[1:5,1:5]
 
 ```{r convert_data_frames_to_matrices}
 
+# data frames to matrices
+
+class(gt.df)
+class(gq.df)
+class(dp.df)
+
 gt.mx <- as.matrix(gt.df)
 gq.mx <- as.matrix(gq.df)
 dp.mx <- as.matrix(dp.df)
 
-dim(gt.mx)
 class(gt.mx)
-gt.mx[1:5,1:5]
+str(gt.mx)
 
-dim(gq.mx)
 class(gq.mx)
-gq.mx[1:5,1:5]
+str(gq.mx)
 
-dim(dp.mx)
 class(dp.mx)
-dp.mx[1:5,1:5]
+str(dp.mx)
 
+# Make sure the matrices are numeric
+gq.mx <- matrix(as.numeric(gq.mx), nrow=nrow(gq.mx))
+dp.mx <- matrix(as.numeric(dp.mx), nrow=nrow(dp.mx))
+
+rownames(gq.mx) <- rownames(gq.df)
+rownames(dp.mx) <- rownames(dp.df)
+
+min(gq.mx, na.rm=TRUE)
+max(gq.mx, na.rm=TRUE)
+
+min(dp.mx, na.rm=TRUE)
+max(dp.mx, na.rm=TRUE)
+
+# Clean-up
 rm(gt.df, gq.df, dp.df)
 
 ```
 
-# check_consistence_of_rownames_and_colnames
+# recode_gq_to_additive
 
-```{r check_consistence_of_rownames_and_colnames}
+```{r recode_gq_to_additive}
 
-# rownames
-sum(rownames(gt.mx) != rownames(gq.mx))
-sum(rownames(gt.mx) != rownames(dp.mx))
-sum(rownames(gt.mx) != rownames(vv.df))
-sum(rownames(gt.mx) != rownames(kgen.df))
-sum(rownames(gt.mx) != rownames(exac.df))
+# --- Prepare genotypes vectors --- #
 
-# colnames
-sum(colnames(gt.mx) != colnames(gq.mx))
-sum(colnames(gt.mx) != colnames(dp.mx))
+# Ref and alt
+ref <- as.vector(vcf.df$REF)
+alt <- as.vector(vcf.df$ALT)
+
+ref[1:5]
+alt[1:5]
+
+# Homozygous reference
+ref_ref_unphased <- paste(ref, ref, sep="/")
+ref_ref_phased <- paste(ref, ref, sep="|")
+
+ref_ref_unphased[1:5]
+ref_ref_phased[1:5]
+
+# Heterozygous
+alt_ref_unphased <- paste(alt, ref, sep="/")
+alt_ref_phased <- paste(alt, ref, sep="|")
+ref_alt_unphased <- paste(ref, alt, sep="/")
+ref_alt_phased <- paste(ref, alt, sep="|")
+
+alt_ref_unphased[1:5]
+alt_ref_phased[1:5]
+ref_alt_unphased[1:5]
+ref_alt_phased[1:5]
+
+# Homozygous alt (biallelic sites only!)
+alt_alt_unphased <- paste(alt, alt, sep="/")
+alt_alt_phased <- paste(alt, alt, sep="|")
+
+alt_alt_unphased[1:5]
+alt_alt_phased[1:5]
+
+# --- Convert genotypes to additive --- #
+
+# Homozygous reference
+0 -> gt.mx[gt.mx == ref_ref_unphased]
+0 -> gt.mx[gt.mx == ref_ref_phased]
+
+# Heterozygous
+1 -> gt.mx[gt.mx == alt_ref_unphased]
+1 -> gt.mx[gt.mx == alt_ref_phased]
+1 -> gt.mx[gt.mx == ref_alt_unphased]
+1 -> gt.mx[gt.mx == ref_alt_phased]
+
+# Homozygous alt (biallelic sites only!)
+2 -> gt.mx[gt.mx == alt_alt_unphased]
+2 -> gt.mx[gt.mx == alt_alt_phased]
+
+# Missed genotypes
+NA -> gt.mx[gt.mx == "./."]
+
+# Check the re-coding result
+summary(as.factor(gt.mx))
+
+# Make sure the matrix is numeric
+rownames_gt <- rownames(gt.mx)
+colnames_gt <- colnames(gt.mx)
+gt.mx <- matrix(as.numeric(gt.mx), nrow=nrow(gt.mx))
+rownames_gt -> rownames(gt.mx)
+colnames_gt -> colnames(gt.mx)
+
+min(gt.mx, na.rm=TRUE)
+max(gt.mx, na.rm=TRUE)
+
+# Clean-up
+rm(ref, alt, ref_ref_unphased, ref_ref_phased, alt_ref_unphased, alt_ref_phased, ref_alt_unphased, ref_alt_phased, alt_alt_unphased, alt_alt_phased, rownames_gt, colnames_gt)
 
 ```
 
-# convert_blanks_to_NAs
+# filter_genotypes_by_GQ (>20)
 
-```{r convert_blanks_to_NAs}
+```{r filter_genotypes_by_GQ}
 
-NA -> vv.df[vv.df$Existing_variation == "", "Existing_variation"] # no blanks in other fields
-NA -> covar.df[covar.df == ""] # 1 case in chemo_hormone (row 84)
-NA -> demographics.df[demographics.df == ""] # 2 cases in registry and one in chemo_hormone
-NA -> BRCA1_BRCA2_PALB2_cases.df[BRCA1_BRCA2_PALB2_cases.df == ""] # 8 cases in notes
+na_rate <- sum(is.na(gt.mx))/(nrow(gt.mx)*ncol(gt.mx))
+na_rate # ~4%
 
-# No blanks in other tables
+NA -> gt.mx[ gq.mx < 20 ]
+
+na_rate <- sum(is.na(gt.mx))/(nrow(gt.mx)*ncol(gt.mx))
+na_rate # ~12%
+
+rm(gq.mx, na_rate)
 
 ```
 
-# reformat_phenotypes_update
+# filter_genotypes_by_DP (<500)
 
-```{r reformat_phenotypes_update}
+```{r filter_genotypes_by_DP}
 
-# Converst factors to vectors (to symplify comparisons)
-str(phenotypes_update.df)
-as.character(phenotypes_update.df$gwas_id) -> phenotypes_update.df$gwas_id
-as.character(phenotypes_update.df$wes_id) -> phenotypes_update.df$wes_id
-trimws(as.character(phenotypes_update.df$hist_cat)) -> phenotypes_update.df$hist_cat
-trimws(as.character(phenotypes_update.df$chemo_cat)) -> phenotypes_update.df$chemo_cat
+NA -> gt.mx[ dp.mx > 500 ]
 
-as.character(phenotypes_update.df$er1) -> phenotypes_update.df$er1
-as.character(phenotypes_update.df$pr1) -> phenotypes_update.df$pr1
-as.character(phenotypes_update.df$hormone) -> phenotypes_update.df$hormone
+na_rate <- sum(is.na(gt.mx))/(nrow(gt.mx)*ncol(gt.mx))
+na_rate # ~12%
 
-NA -> phenotypes_update.df[phenotypes_update.df$er1 == "missing", "er1"]
-NA -> phenotypes_update.df[phenotypes_update.df$pr1 == "missing", "pr1"]
-NA -> phenotypes_update.df[phenotypes_update.df$hormone == "missing", "hormone"]
+rm(dp.mx, na_rate)
 
-as.numeric(phenotypes_update.df$er1) -> phenotypes_update.df$er1
-as.numeric(phenotypes_update.df$pr1) -> phenotypes_update.df$pr1
-as.numeric(phenotypes_update.df$hormone) -> phenotypes_update.df$hormone
+```
 
-str(phenotypes_update.df)
+# filter_variants_by_callrate (>80%)
+
+plot variants callrates per case and per variant
+
+```{r filter_variants_by_callrate}
+
+# --- plot callrates beforte filtering --- #
+
+# Calcuilate callrates per variants
+vector_callrate.fnc <- function(x){1-sum(is.na(x))/length(x)}
+vars_callrates <- apply(gt.mx, 1, vector_callrate.fnc)
+
+# Histogram of callrates per variant
+hist(vars_callrates, xlim=c(0,1))
+
+# Simple plot of callrate per sample
+cases_callrates <- apply(gt.mx, 2, vector_callrate.fnc)
+
+group_colours <- c(rep("red", 50), rep("green",198), rep("blue", 480))
+plot(cases_callrates, pch=20, col=group_colours, xlab="cases")
+legend("right", pch=20, c("kgen50","nfe","wecare"), col=c("red", "green", "blue"))
+
+# Plot of callrate per sample with ggplot2
+groups <- c(rep("kgen50", 50), rep("nfe",198), rep("wecare", 480))
+no <- c(1:728)
+data_to_plot.df <- data.frame(cbind(no, cases_callrates, groups))
+str(data_to_plot.df)
+
+data_to_plot.df$no <- as.numeric(as.vector(data_to_plot.df$no))
+data_to_plot.df$cases_callrates <- as.numeric(as.vector(data_to_plot.df$cases_callrates))
+str(data_to_plot.df)
+
+colour_codes <- c("red", "green", "blue")
+names(colour_codes) <- c("kgen50", "nfe", "wecare")
+userColourScale <- scale_colour_manual(values=colour_codes)
+
+ggplot(data_to_plot.df, aes(x=no, y=cases_callrates)) + 
+  geom_bar(stat="identity", aes(fill=groups, color=groups)) + 
+  userColourScale
+
+# Remove varioants with low call rates (<0.8)
+gt.mx <- gt.mx[vars_callrates>=0.8,]
+vcf.df <- vcf.df[vars_callrates>=0.8,]
+
+# Check callrates
+vars_callrates <- apply(gt.mx, 1, vector_callrate.fnc)
+
+# Histogram
+hist(vars_callrates, xlim=c(0,1))
+
+# Plot of callrate per sample
+cases_callrates <- apply(gt.mx, 2, vector_callrate.fnc)
+plot(cases_callrates, pch=20, col=group_colours, xlab="cases")
+legend("right", pch=20, c("kgen50","nfe","wecare"), col=c("red", "green", "blue"))
+
+rm(colour_codes, userColourScale, data_to_plot.df, groups, no, group_colours, vars_callrates, cases_callrates, vector_callrate.fnc)
+
+```
+
+# remove_variants_with_the_uniform_genotypes_accross_all_samples
+
+```{r remove_variants_with_the_uniform_genotypes_accross_all_samples}
+
+# Function to detect uniform numeric vector
+uniform_vector.fnc <- function(x){
+  if(min(x, na.rm=TRUE) == max(x, na.rm=TRUE)){return(TRUE)} else {return(FALSE)}}
+
+# Variants with uniform genotypes accross all samples 
+uniform_genotypes <- apply(gt.mx, 1, uniform_vector.fnc)
+summary(uniform_genotypes)
+sum(uniform_genotypes)
+
+# Remove variants with uniform genotypes accross all samples
+gt.mx <- gt.mx[!uniform_genotypes,]
+vcf.df <- vcf.df[!uniform_genotypes,]
+dim(gt.mx)
+dim(vcf.df)
+
+# Clean-up
+rm(uniform_vector.fnc, uniform_genotypes)
+
+```
+
+# estimate_number_of_rare_and_variants_with_high_AFs
+
+High number of variants with extremely high AFs reflect preferential selection of variants with rare allele in reference genome. 
+
+```{r estimate_number_of_rare_and_variants_with_high_AFs}
+
+sum(as.vector(vcf.df$AF) > 0.95) # variants with rare allele in reference genome
+sum(as.vector(vcf.df$AF) < 0.05) # rare variants with common allele in reference genome
+
+```
+
+# data_summary
+
+```{r data_summary}
+
+ls()
+
+dim(gt.mx)
+class(gt.mx)
+gt.mx[1:5, 1:5]
+
+dim(vcf.df)
+str(vcf.df)
+vcf.df[1:5, 1:5]
+
+dim(kgen50_cases.df)
+str(kgen50_cases.df)
+kgen50_cases.df[1:5,]
+
+# Check consistence of rownames in gt.mx and vcf.df
+sum(rownames(gt.mx) != rownames(vcf.df))
 
 ```
 
@@ -202,7 +447,7 @@ str(phenotypes_update.df)
 
 ```{r save_data}
 
-save.image(paste(interim_data_folder, "r01_read_and_clean_data_jan2017.RData", sep="/"))
+save.image(paste(interim_data_folder, "r01_read_and_clean_kgen50_jan2017.RData", sep="/"))
 
 ```
 

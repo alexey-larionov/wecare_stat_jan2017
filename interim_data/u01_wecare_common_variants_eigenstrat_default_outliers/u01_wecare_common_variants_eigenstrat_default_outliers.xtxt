@@ -1,0 +1,8 @@
+set terminal postscript color noenhanced
+set title  "" 
+set key outside
+set xlabel  "eigenvector 1" 
+set ylabel  "eigenvector 2" 
+plot  "/scratch/medgen/scripts/wecare_stat_01.17/interim_data/u01_wecare_common_variants_eigenstrat_default_outliers/u01_wecare_common_variants_eigenstrat_default_outliers.evec.1:2:UBC" using ($2)*1:($3)*1 title "UBC" , \
+ "/scratch/medgen/scripts/wecare_stat_01.17/interim_data/u01_wecare_common_variants_eigenstrat_default_outliers/u01_wecare_common_variants_eigenstrat_default_outliers.evec.1:2:CBC" using ($2)*1:($3)*1 title "CBC" 
+## pause 9999

@@ -1,64 +1,65 @@
 ---
-title: "SKAT_power_estimates"
+title: "Updated_SKAT_power_estimates"
 output: html_document
 ---
 
 author: AL  
-date: 31Jan2017  
+date: 03Feb2017  
 
-This calculation uses data simulated for people of european ancestry.  It estimates power of a standard SKAT procedure that aggregates rare variants over a genomic region.  It produces table for different p-levels and different population sizes.  
+This calculation uses data simulated for people of european ancestry.  It estimates power for a SKAT procedure that aggregates rare variants over a genomic region.  
 
-It is not yet clear to me  
-- how the p-values used in simulation are related to the (very) different p-values reported by SKAT under different assumptions?  
-- whether the used p-values account tor multiple testing?  
+The simulations below use the following (optimistic?) assumptions:
 
-The simulation below uses the following (optimistic) assumptions:
+### N.Sample.ALL = 480 / 3,731
+The numbers of samples in the pilot / proposal
 
-### Case.Prop = 0.5
-50 % of samples are cases and 50 % of samples are controls
+### Case.Prop = 0.50 / 0.41
+- Pilot:    50 % of samples are cases and 50 % of samples are controls  
+- Proposal: 41 % of samples are cases and 59 % of samples are controls 
 
 ### Region size = 3kb
 ~ average size of a gene coding sequence
 
-### Causal.MAF.Cutoff = 3% (default)
-Only SNPs that have MAFs < Causal.MAF.Cutoff may be causal
+### Causal.MAF.Cutoff = 5% 
+Only SNPs that have MAFs < Causal.MAF.Cutoff may be causal.
 
-###	Causal percent = 20% (default - optimistic?)
+###	Causal percent = 50%
 Percent of rare SNPs (MAF < Causal.MAF.Cutoff) that are casual.  
+This parameter may be set to this relatively high level because we preselect only LOF variants and variants with high SIFT and Polyphen scores.  
 
-It is not clear whether this is  
-- A percent of casual SNPs amongst all rare variants. In this case 20% would be grossly excessive.  
-- A percent of casual SNPs in a "significant" region. In this case 20% would be more acceptable; though the simulation would need another parameter for number of "significant" regions?
-
-###	Negative percent = 0% (default)
+###	Negative percent = 0%
 Percent of causal variants that have negative effect to the phenotype.  In other words, the below simulation assumes that all variants have effect to the same direction. 
 
-### MaxOR = 2 (optimistic)
-### OR.Type = "Fixed"
-Odds ratio for simulated casual variants is fixed = 2 (~ as reported for CHEK2).  The default (MaxOR = 5 and OR.Type = "Log") would make OR non-transparent and dependent on AF.  
+### MaxOR = 2 OR.Type = "Fixed"
+Odds ratio for simulated casual variants is fixed = 2 (~ as reported for CHEK2).  
 
 ```{r}
 
 # Load SKAT library
 library(SKAT)
 
-# Explore simulated haplotypes
-data("SKAT.haplotypes")
-SKAT.haplotypes$Haplotype[1:5,1:10]
-SKAT.haplotypes$SNPInfo[1:5,]
-
-# Calculate powers ofr different sample sizes and significance levels
-powers <- Power_Logistic(
+power_480 <- Power_Logistic(
+  N.Sample.ALL = 480, 
   Case.Prop=0.5, 
   SubRegion.Length=3000, 
-  Causal.Percent= 20, 
-  N.Sim=100, 
+  Causal.MAF.Cutoff=0.05, 
+  Causal.Percent= 50, 
+  N.Sim=1000, 
   MaxOR=2, OR.Type = "Fixed")
 
-powers
+power_3731 <- Power_Logistic(
+  N.Sample.ALL = 3731, 
+  Case.Prop=0.41, 
+  SubRegion.Length=3000, 
+  Causal.MAF.Cutoff=0.05, 
+  Causal.Percent= 50, 
+  N.Sim=1000, 
+  MaxOR=2, OR.Type = "Fixed")
 
-#	Calculate the required sample sizes to achieve 80% power
-Get_RequiredSampleSize(powers, Power=0.8)
+
+power_480
+
+power_3731
 
 ```
 

@@ -4,7 +4,7 @@ output: html_document
 ---
 
 started: Alexey Larionov, 01Mar2016  
-last updated: Alexey Larionov, 26Jan2017
+last updated: Alexey Larionov, 08Feb2017
 
 # Summary
 
@@ -13,7 +13,7 @@ This is the last step that prepares dataset for downstream analyses.
 It performs the following:  
 - remove cases, which failed sequencing
 
-- remove variants that were present in the removed cases only  
+- remove variants absent in the retained cases  
 
 - explore the remaining data  
 
@@ -78,7 +78,7 @@ sum(rownames(gt.mx) != rownames(exac.df))
 ```
 
 # remove_wecare_cases_failed_filters
-
+Remove 32 cases: 710 -> 678
 This step also syncronises the rows (cases) in phenotypes with columns (cases) in genotypes. 
 
 ```{r remove_wecare_cases_failed_filters}
@@ -100,21 +100,38 @@ rm(pf_cases, retained_cases)
 
 ```
 
-# remove_variants_not_found_in_retained_cases
+# remove_variants_with_the_uniform_genotypes_accross_all_samples
+Remove 8,135 variants: 283,651 -> 275,516
 
-Remove variants: 283,651 -> 276,591
+```{r remove_variants_with_the_uniform_genotypes_accross_all_samples}
 
-```{r remove_variants_not_found_in_retained_cases}
+# Check that there is no all-NA variants
+non_NA_count.udf <- function(x){sum(!is.na(x))}
+all_NA <- apply(gt.mx, 1, non_NA_count.udf) == 0
+sum(all_NA) # 0
 
-missed_variants <- apply(gt.mx, 1, sum, na.rm=TRUE) == 0 
-sum(missed_variants) # 7,060
+# Function to detect uniform numeric vector
+uniform_vector.udf <- function(x){
+  if(min(x, na.rm=TRUE) == max(x, na.rm=TRUE)){return(TRUE)} else {return(FALSE)}}
 
-gt.mx <- gt.mx[!missed_variants,]
-variants.df <- variants.df[!missed_variants,]
-kgen.df <- kgen.df[!missed_variants,]
-exac.df <- exac.df[!missed_variants,]
+# Variants with uniform genotypes accross all samples 
+uniform_genotypes <- apply(gt.mx, 1, uniform_vector.udf)
+summary(uniform_genotypes)
+sum(uniform_genotypes)
 
-rm(missed_variants)
+# Remove variants with uniform genotypes accross all samples
+gt.mx <- gt.mx[!uniform_genotypes,]
+variants.df <- variants.df[!uniform_genotypes,]
+kgen.df <- kgen.df[!uniform_genotypes,]
+exac.df <- exac.df[!uniform_genotypes,]
+
+dim(gt.mx)
+dim(variants.df)
+dim(kgen.df)
+dim(exac.df)
+
+# Clean-up
+rm(non_NA_count.udf, all_NA, uniform_vector.udf, uniform_genotypes)
 
 ```
 
@@ -129,13 +146,13 @@ nfe.mx <- gt.mx[,nfe_ids]
 wecare.mx <- gt.mx[,wecare_ids]
 
 nfe_variants <- apply(nfe.mx, 1, sum, na.rm=TRUE) > 0 
-sum(nfe_variants) # 154,911
+sum(nfe_variants) # 153,836
 
 wecare_variants <- apply(wecare.mx, 1, sum, na.rm=TRUE) > 0 
-sum(wecare_variants) # 226,722
+sum(wecare_variants) # 225,647
 
 overlap_variants <- sum(nfe_variants) + sum(wecare_variants) - nrow(variants.df)
-overlap_variants # 105,042
+overlap_variants # 103,967
 
 # http://stackoverflow.com/questions/8713994/venn-diagram-proportional-and-color-shading-with-semi-transparency 
 grid.newpage();
@@ -167,7 +184,8 @@ na_summary.df
 
 # Plot
 ggplot(na_summary.df, aes(dataset, value)) +
-  geom_bar(aes(fill = dataset), stat="identity")
+  geom_bar(aes(fill = dataset), stat="identity") + 
+  ggtitle("NA rates")
 
 # Clean-up
 rm(gt_nfe.na, gt_wecare.na, na_summary.df, nfe.mx, wecare.mx)
