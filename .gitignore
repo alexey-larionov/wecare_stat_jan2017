@@ -6,3 +6,5 @@
 *.vcf
 *.vcf.idx
 *.lfidx
+*.eval
+*.evec
