@@ -146,9 +146,9 @@ data2plot.df <- cbind(cases_IDs, cases_labels, wecare_nfe_eigenvectors.df[,1:3])
 
 # --- Plot eig1 vs eig2 --- #
 
-g <- ggplot(data2plot.df, aes(-V1,-V2)) +
+g <- ggplot(data2plot.df, aes(-V1,V2)) +
   geom_point(aes(colour=cases_labels, text=cases_IDs)) + 
-  labs(title="wecare-nfe<br>all variants (275,516 x 678)", x="-eigenvector1", y="-eigenvector2") +
+  labs(title="wecare-nfe<br>all variants (275,516 x 678)", x="-eigenvector1", y="eigenvector2") +
   userColourScale
 
 ggplotly(g)
@@ -156,6 +156,66 @@ ggplotly(g)
 # --- Clean-up --- #
 
 rm(wecare_nfe_eigenvectors.df, wecare_nfe_eigenvalues, g, data2plot.df)
+
+```
+
+# calculate_outliers_all_variants
+
+Using 6 standard deviations in 5 eigenvectors
+
+```{r calculate_outliers_all_variants}
+
+wecare_nfe_all_variants_eigenvectors.mx <- wecare_nfe_eigen$vectors
+
+ev1 <- wecare_nfe_all_variants_eigenvectors.mx[,1]
+ev1.positive_outliers <- ev1 > mean(ev1) + 6 * sd(ev1)
+ev1.negative_outliers <- ev1 < mean(ev1) - 6 * sd(ev1)
+sum(ev1.positive_outliers)
+sum(ev1.negative_outliers)
+
+wecare_nfe_phenotypes.df$wes_id[ev1.positive_outliers]
+wecare_nfe_phenotypes.df$wes_id[ev1.negative_outliers]
+
+ev2 <- wecare_nfe_all_variants_eigenvectors.mx[,2]
+ev2.positive_outliers <- ev2 > mean(ev2) + 6 * sd(ev2)
+ev2.negative_outliers <- ev2 < mean(ev2) - 6 * sd(ev2)
+sum(ev2.positive_outliers)
+sum(ev2.negative_outliers)
+
+wecare_nfe_phenotypes.df$wes_id[ev2.positive_outliers]
+wecare_nfe_phenotypes.df$wes_id[ev2.negative_outliers]
+
+ev3 <- wecare_nfe_all_variants_eigenvectors.mx[,3]
+ev3.positive_outliers <- ev3 > mean(ev3) + 6 * sd(ev3)
+ev3.negative_outliers <- ev3 < mean(ev3) - 6 * sd(ev3)
+sum(ev3.positive_outliers)
+sum(ev3.negative_outliers)
+
+wecare_nfe_phenotypes.df$wes_id[ev3.positive_outliers]
+wecare_nfe_phenotypes.df$wes_id[ev3.negative_outliers]
+
+ev4 <- wecare_nfe_all_variants_eigenvectors.mx[,4]
+ev4.positive_outliers <- ev4 > mean(ev4) + 6 * sd(ev4)
+ev4.negative_outliers <- ev4 < mean(ev4) - 6 * sd(ev4)
+sum(ev4.positive_outliers)
+sum(ev4.negative_outliers)
+
+wecare_nfe_phenotypes.df$wes_id[ev4.positive_outliers]
+wecare_nfe_phenotypes.df$wes_id[ev4.negative_outliers]
+
+ev5 <- wecare_nfe_all_variants_eigenvectors.mx[,5]
+ev5.positive_outliers <- ev5 > mean(ev5) + 6 * sd(ev5)
+ev5.negative_outliers <- ev5 < mean(ev5) - 6 * sd(ev5)
+sum(ev5.positive_outliers)
+sum(ev5.negative_outliers)
+
+wecare_nfe_phenotypes.df$wes_id[ev5.positive_outliers]
+wecare_nfe_phenotypes.df$wes_id[ev5.negative_outliers]
+
+# Clean-up
+rm(wecare_nfe_all_variants_eigenvectors.mx, ev1, ev1.positive_outliers, ev1.negative_outliers, 
+   ev2, ev2.positive_outliers, ev2.negative_outliers, ev3, ev3.positive_outliers, ev3.negative_outliers,
+   ev4, ev4.positive_outliers, ev4.negative_outliers, ev5, ev5.positive_outliers, ev5.negative_outliers)
 
 ```
 
@@ -353,7 +413,7 @@ sum(rownames(common_wecare_nfe_genotypes.mx) != rownames(common_wecare_nfe_exac.
 
 ```{r save_data}
 
-save.image(paste(interim_data_folder, "r05_calculate_egenvectors_wecare_nfe_jan2017.RData", sep="/"))
+save.image(paste(interim_data_folder, "r05b_calculate_egenvectors_wecare_nfe_jan2017.RData", sep="/"))
 
 ```
 

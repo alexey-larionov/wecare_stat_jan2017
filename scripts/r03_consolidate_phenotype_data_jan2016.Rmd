@@ -1035,16 +1035,27 @@ write.table(phenotypes.df, file=paste(interim_data_folder, "wecare_phenotypes.tx
 # explore_cases
 
 of 512 sequenced cases:  
-- 19 failed sequencing (mixed during the libraryu prep, low concordance with gwas, some of those were also non-annotated and BRCA1/2 carriers)  
+- 19 failed sequencing (mixed during the library prep, low concordance with gwas, some of those were also non-annotated and BRCA1/2 carriers)  
 - 2 were intentional duplicates  
 - 4 BRCA1 carriers (3 intentional)  
 - 4 BRCA2 carriers  
 - 3 PALB2 carriers
 
-
 ```{r explore_cases}
 
 summary(as.factor(phenotypes.df$filter))
+
+```
+
+# explore_consistency_of_some_clinical_data
+
+Apparently, 11 ER-negatives were treated with hormones; 2 of ththem ER/PR-negatives ...
+
+```{r explore_consistency_of_some_clinical_data}
+
+phenotypes.df %>% 
+  filter(er==0 & hormone == 1) %>% 
+  select(wes_id, gwas_id, er, pr, hormone)
 
 ```
 

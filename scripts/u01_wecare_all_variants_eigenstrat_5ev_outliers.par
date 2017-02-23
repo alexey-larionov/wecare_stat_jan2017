@@ -1,0 +1,12 @@
+genotypename: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/wecare_all_variants.geno
+snpname: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/wecare_all_variants.snp
+indivname: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/wecare.ind
+evecoutname: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/u01_wecare_all_variants_eigenstrat_5ev_outliers/u01_wecare_all_variants_eigenstrat_5ev_outliers.evec
+evaloutname: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/u01_wecare_all_variants_eigenstrat_5ev_outliers/u01_wecare_all_variants_eigenstrat_5ev_outliers.eval
+genotypeoutname: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/u01_wecare_all_variants_eigenstrat_5ev_outliers/u01_wecare_all_variants_eigenstrat_5ev_outliers.geno
+snpoutname: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/u01_wecare_all_variants_eigenstrat_5ev_outliers/u01_wecare_all_variants_eigenstrat_5ev_outliers.snp
+indivoutname: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/u01_wecare_all_variants_eigenstrat_5ev_outliers/u01_wecare_all_variants_eigenstrat_5ev_outliers.ind
+outlieroutname: /scratch/medgen/scripts/wecare_stat_01.17/interim_data/u01_wecare_all_variants_eigenstrat_5ev_outliers/u01_wecare_all_variants_eigenstrat_5ev_outliers.outliers
+outputformat: EIGENSTRAT
+altnormstyle: NO
+numoutlierevec: 5

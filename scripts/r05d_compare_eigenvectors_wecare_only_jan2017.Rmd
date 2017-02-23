@@ -38,7 +38,7 @@ library(plotly)
 
 # --- eigenvectors --- #
 
-load(paste(interim_data_folder, "r05_calculate_egenvectors_wecare_only_jan2017.RData", sep="/"))
+load(paste(interim_data_folder, "r05a_calculate_egenvectors_wecare_only_jan2017.RData", sep="/"))
 
 rm(wecare_exac.df, wecare_genotypes.mx, wecare_kgen.df, wecare_nfe_exac.df, wecare_nfe_genotypes.mx, wecare_nfe_kgen.df, wecare_nfe_phenotypes.df, wecare_nfe_variants.df, wecare_variants.df, 
 common_wecare_exac.df, common_wecare_genotypes.mx, common_wecare_kgen.df, common_wecare_variants.df)
@@ -248,6 +248,8 @@ data2plot.df <- as.data.frame(cbind(
   wecare_phenotypes.df$eig3_gwas,
   wecare_phenotypes.df$cc))
 
+sum(es_evectors.df$wes_id != wecare_phenotypes.df$wes_id)
+
 data2plot.df <- cbind(es_evectors.df$wes_id, data2plot.df)
 
 colnames(data2plot.df) <- c("wes_id", "wes_ev1", "wes_ev2", "wes_ev3", 
@@ -275,7 +277,7 @@ cor.test(es_evectors.df$es_ev1, wecare_phenotypes.df$eig1_gwas)
 g <- ggplot(data2plot.df, aes(wes_ev2, gwas_ev2)) +
   geom_point(aes(colour=group, text=wes_id)) + 
   labs(title="2nd eigenvectors: WES EIGENSTRAT vs GWAS<br>WECARE, all variants") +
-  geom_abline(slope = 1, colour = "brown", linetype = 2) + 
+  geom_abline(slope = -1, colour = "brown", linetype = 2) + 
   userColourScale
 ggplotly(g)
 
@@ -286,7 +288,7 @@ cor.test(es_evectors.df$es_ev2, wecare_phenotypes.df$eig2_gwas)
 g <- ggplot(data2plot.df, aes(wes_ev3, gwas_ev3)) +
   geom_point(aes(colour=group, text=wes_id)) + 
   labs(title="3rd eigenvectors: WES EIGENSTRAT vs GWAS<br>WECARE, all variants") +
-  geom_abline(slope = 1, colour = "brown", linetype = 2) + 
+  geom_abline(slope = -1, colour = "brown", linetype = 2) + 
   userColourScale
 ggplotly(g)
 

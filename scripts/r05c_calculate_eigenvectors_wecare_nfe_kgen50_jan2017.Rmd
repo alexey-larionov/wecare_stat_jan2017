@@ -336,7 +336,7 @@ sum(colnames(gt.mx) != colnames(common_gt.mx))
 
 ```{r save_data}
 
-save.image(paste(interim_data_folder, "r05_calculate_egenvectors_wecare_nfe_kgen50_jan2017.RData", sep="/"))
+save.image(paste(interim_data_folder, "r05c_calculate_egenvectors_wecare_nfe_kgen50_jan2017.RData", sep="/"))
 
 ```
 

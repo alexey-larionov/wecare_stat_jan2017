@@ -143,7 +143,7 @@ $(document).ready(function () {
 <h1>start_section</h1>
 <pre class="r"><code># Time stamp
 Sys.time()</code></pre>
-<pre><code>## [1] &quot;2017-01-26 18:51:10 GMT&quot;</code></pre>
+<pre><code>## [1] &quot;2017-02-22 10:02:19 GMT&quot;</code></pre>
 <pre class="r"><code># Folders
 setwd(&quot;/scratch/medgen/scripts/wecare_stat_01.17/scripts&quot;)
 interim_data_folder &lt;- &quot;/scratch/medgen/scripts/wecare_stat_01.17/interim_data&quot;
@@ -1890,7 +1890,7 @@ phenotypes.df[PALB2_carriers,&quot;filter&quot;]</code></pre>
 </div>
 <div id="explore_cases" class="section level1">
 <h1>explore_cases</h1>
-<p>of 512 sequenced cases:<br />- 19 failed sequencing (mixed during the libraryu prep, low concordance with gwas, some of those were also non-annotated and BRCA1/2 carriers)<br />- 2 were intentional duplicates<br />- 4 BRCA1 carriers (3 intentional)<br />- 4 BRCA2 carriers<br />- 3 PALB2 carriers</p>
+<p>of 512 sequenced cases:<br />- 19 failed sequencing (mixed during the library prep, low concordance with gwas, some of those were also non-annotated and BRCA1/2 carriers)<br />- 2 were intentional duplicates<br />- 4 BRCA1 carriers (3 intentional)<br />- 4 BRCA2 carriers<br />- 3 PALB2 carriers</p>
 <pre class="r"><code>summary(as.factor(phenotypes.df$filter))</code></pre>
 <pre><code>##                  BRCA1_carrier                  BRCA2_carrier 
 ##                              4                              4 
@@ -1900,6 +1900,25 @@ phenotypes.df[PALB2_carriers,&quot;filter&quot;]</code></pre>
 ##                              4                              3 
 ##                           pass 
 ##                            480</code></pre>
+</div>
+<div id="explore_consistency_of_some_clinical_data" class="section level1">
+<h1>explore_consistency_of_some_clinical_data</h1>
+<p>Apparently, 11 ER-negatives were treated with hormones; 2 of ththem ER/PR-negatives …</p>
+<pre class="r"><code>phenotypes.df %&gt;% 
+  filter(er==0 &amp; hormone == 1) %&gt;% 
+  select(wes_id, gwas_id, er, pr, hormone)</code></pre>
+<pre><code>##    wes_id  gwas_id er pr hormone
+## 1  P1_G06 id212405  0  1       1
+## 2  P1_G11 id367005  0  1       1
+## 3  P2_A08 id202026  0  1       1
+## 4  P2_C11 id243493  0  1       1
+## 5  P2_D05 id248876  0  1       1
+## 6  P3_C06 id294079  0  1       1
+## 7  P4_D09 id242684  0  1       1
+## 8  P4_G04 id272828  0  0       1
+## 9  P5_D10 id357932  0  0       1
+## 10 P6_C01 id256943  0  1       1
+## 11 P6_C09 id297183  0  1       1</code></pre>
 </div>
 <div id="add_nfe_to_phenotypes_table" class="section level1">
 <h1>add_nfe_to_phenotypes_table</h1>
@@ -2091,17 +2110,17 @@ sum(rownames(gt.mx) != rownames(variants.df))</code></pre>
 ## [1] stats     graphics  grDevices utils     datasets  methods   base     
 ## 
 ## other attached packages:
-## [1] ggplot2_2.1.0  reshape2_1.4.1 dplyr_0.5.0   
+## [1] ggplot2_2.2.1  reshape2_1.4.1 dplyr_0.5.0   
 ## 
 ## loaded via a namespace (and not attached):
 ##  [1] Rcpp_0.12.6      digest_0.6.10    assertthat_0.1   grid_3.2.3      
 ##  [5] plyr_1.8.4       R6_2.1.2         gtable_0.2.0     DBI_0.5         
-##  [9] formatR_1.4      magrittr_1.5     scales_0.4.0     evaluate_0.9    
+##  [9] formatR_1.4      magrittr_1.5     scales_0.4.1     evaluate_0.9    
 ## [13] stringi_1.1.1    lazyeval_0.2.0   rmarkdown_1.0    tools_3.2.3     
 ## [17] stringr_1.0.0    munsell_0.4.3    yaml_2.1.13      colorspace_1.2-6
 ## [21] htmltools_0.3.5  knitr_1.13       tibble_1.1</code></pre>
 <pre class="r"><code>Sys.time()</code></pre>
-<pre><code>## [1] &quot;2017-01-26 18:51:47 GMT&quot;</code></pre>
+<pre><code>## [1] &quot;2017-02-22 10:02:56 GMT&quot;</code></pre>
 </div>
 
 

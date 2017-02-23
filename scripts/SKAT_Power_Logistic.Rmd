@@ -1,21 +1,21 @@
 ---
-title: "Updated_SKAT_power_estimates"
+title: "SKAT_power_estimates: 1000CBC vs 1000UBC"
 output: html_document
 ---
 
 author: AL  
-date: 03Feb2017  
+date: 13Feb2017  
 
-This calculation uses data simulated for people of european ancestry.  It estimates power for a SKAT procedure that aggregates rare variants over a genomic region.  
+This calculation uses data simulated for people of european ancestry.  
+It estimates power for a SKAT procedure that aggregates rare variants over a genomic region.  
 
 The simulations below use the following (optimistic?) assumptions:
 
-### N.Sample.ALL = 480 / 3,731
-The numbers of samples in the pilot / proposal
+### N.Sample.ALL = 2480
+The total number of samples
 
-### Case.Prop = 0.50 / 0.41
-- Pilot:    50 % of samples are cases and 50 % of samples are controls  
-- Proposal: 41 % of samples are cases and 59 % of samples are controls 
+### Case.Prop = 0.50
+50 % of samples are cases and 50 % of samples are controls  
 
 ### Region size = 3kb
 ~ average size of a gene coding sequence
@@ -38,28 +38,16 @@ Odds ratio for simulated casual variants is fixed = 2 (~ as reported for CHEK2).
 # Load SKAT library
 library(SKAT)
 
-power_480 <- Power_Logistic(
-  N.Sample.ALL = 480, 
+power_2480 <- Power_Logistic(
+  N.Sample.ALL = 2480, 
   Case.Prop=0.5, 
   SubRegion.Length=3000, 
   Causal.MAF.Cutoff=0.05, 
   Causal.Percent= 50, 
-  N.Sim=1000, 
+  N.Sim=100, 
   MaxOR=2, OR.Type = "Fixed")
 
-power_3731 <- Power_Logistic(
-  N.Sample.ALL = 3731, 
-  Case.Prop=0.41, 
-  SubRegion.Length=3000, 
-  Causal.MAF.Cutoff=0.05, 
-  Causal.Percent= 50, 
-  N.Sim=1000, 
-  MaxOR=2, OR.Type = "Fixed")
-
-
-power_480
-
-power_3731
+power_2480
 
 ```
 
