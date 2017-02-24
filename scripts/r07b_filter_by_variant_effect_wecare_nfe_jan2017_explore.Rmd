@@ -1,0 +1,314 @@
+---
+title: "filter_by_variant_effect_wecare_nfe_jan2017_explore"
+output: html_document
+---
+
+started: Alexey Larionov, 2016  
+last updated: Alexey Larionov, 24Feb2017
+
+# Summary
+
+### Exploring removal of common (AF>5-10%) variants
+Modest effect. 
+
+###Exploring BRCA1, BRCA2, PALB2 carriers
+As expected, there is a number of BRCA1, BRCA2, PALB2 carriers.  
+All detected variants were reviewed in Dec 2016 and found non-pathogenic. 
+
+Presence of these variants in both nfe and wecare, does not support their relevance to BC. 
+
+# start_section
+
+```{r start_section}
+
+# Start time
+Sys.time()
+
+# Folders
+setwd("/scratch/medgen/scripts/wecare_stat_01.17/scripts")
+interim_data_folder <- "/scratch/medgen/scripts/wecare_stat_01.17/interim_data"
+
+# Load libraries
+library(dplyr)
+
+```
+
+# load_data
+
+```{r load_data}
+
+# Load data
+load(paste(interim_data_folder, "s07b_filter_by_variant_effect_wecare_nfe_jan2017.RData", sep="/"))
+
+```
+
+# check_data
+
+```{r check_data}
+
+ls()
+
+dim(wecare_nfe_genotypes.mx)
+class(wecare_nfe_genotypes.mx)
+wecare_nfe_genotypes.mx[1:5,1:5]
+
+dim(wecare_nfe_phenotypes.df)
+str(wecare_nfe_phenotypes.df)
+wecare_nfe_phenotypes.df[1:5,1:5]
+
+dim(wecare_nfe_variants.df)
+colnames(wecare_nfe_variants.df)
+wecare_nfe_variants.df[1:5,1:5]
+
+dim(wecare_nfe_kgen.df)
+colnames(wecare_nfe_kgen.df)
+wecare_nfe_kgen.df[1:5,1:5]
+
+dim(wecare_nfe_exac.df)
+colnames(wecare_nfe_exac.df)
+wecare_nfe_exac.df[1:5,1:5]
+
+# Check consistency of rownames and colnames
+sum(colnames(wecare_nfe_genotypes.mx) != rownames(wecare_nfe_phenotypes.df))
+sum(rownames(wecare_nfe_genotypes.mx) != rownames(wecare_nfe_variants.df))
+sum(rownames(wecare_nfe_genotypes.mx) != rownames(wecare_nfe_kgen.df))
+sum(rownames(wecare_nfe_genotypes.mx) != rownames(wecare_nfe_exac.df))
+
+```
+
+# explore_non_common_variants
+
+Defining variants that are not common as the following:  
+[ kgen EUR AF < 5% or NA ] AND [ wecare AF < 10 ]
+
+This overall changes are modest:
+the number of variants drops from 23,336 to 22,232
+the number of genes drops from 10,122 to 9,886
+It seems that the upstream selection implicitly removed most of common variants. 
+
+Weighting by AF in the downstream analysis should take care of the remaining ~5% of proteing-affecting variants that happened to be common. 
+
+```{r explore_non_common_variants}
+
+# Non-common  kgen
+non_common_kgen_variants <- wecare_nfe_kgen.df$kgen.EUR_AF < 0.05
+summary(non_common_kgen_variants)
+TRUE -> non_common_kgen_variants[is.na(non_common_kgen_variants)]
+summary(non_common_kgen_variants) # 22,322
+
+# Non-common wecare
+non_common_wecare_nfe_variants <- wecare_nfe_variants.df$af_wecare_nfe_cln < 0.1
+summary(non_common_wecare_nfe_variants) # 22,523
+
+# Non-common combined
+non_common_variants <- non_common_kgen_variants & non_common_wecare_nfe_variants
+summary(non_common_variants) # 22,232
+
+# Get number of retained genes
+length(unique(wecare_nfe_variants.df[non_common_variants,"SYMBOL"])) # 9,886
+
+# Variants per gene
+x <- sort(table(as.vector(wecare_nfe_variants.df[non_common_variants,"SYMBOL"])), decreasing = TRUE)
+x[1:300]
+
+# Save table of counts
+y <- cbind(names(x),x)
+c("gene","count") -> colnames(y)
+write.table(y, file=paste(results_folder, "wecare_nfe_non_common_variants_per_gene.txt", sep="/"), quote = FALSE, row.names = FALSE)
+
+# Plot histogram
+z <- wecare_nfe_variants.df %>%  group_by(SYMBOL) %>% summarise(n())
+"vars_count" -> colnames(z)[2]
+hist(z$vars_count, main="Histogram for numbers of non-common protein-affecting variants per gene\n(wecare-nfe)", xlab="Variants per gene", ylab="Number of genes", ylim=c(0,8000), breaks=35, labels = TRUE)
+mean(z$vars_count) # 2.305473
+
+# Clean-up
+rm(non_common_kgen_variants, non_common_wecare_nfe_variants, non_common_variants, x,y,z)
+
+```
+
+# explore_BRCA1_carriers
+
+5 different BRCA1 protein-affecting variants:  
+all missenses (one pretty common: ~5%), one - in nfe only. 
+all reviuved and considered non-pathogenic in Dec2016.  
+
+75 BRCA1 carriers (mainly carrying the common variant, in both wecare and nfe). 
+
+One BRCA1 hom in nfe (HG01605) - the common non-path missense
+
+```{r explore_BRCA1_carriers}
+
+# Select variants
+brca1_variants <- wecare_nfe_variants.df$SYMBOL == "BRCA1"
+summary(brca1_variants) # 5
+
+# Select carriers
+brca1_count_per_case <- apply(wecare_nfe_genotypes.mx[brca1_variants,], 2, sum, na.rm=TRUE)
+summary(as.factor(brca1_count_per_case))
+brca1_carrier <- brca1_count_per_case > 0
+summary(brca1_carrier) # 75
+
+# Subset dataset
+wecare_nfe_brca1_genotypes.mx <- wecare_nfe_genotypes.mx[brca1_variants, brca1_carrier]
+wecare_nfe_brca1_exac.df <- wecare_nfe_exac.df[brca1_variants,]
+wecare_nfe_brca1_kgen.df <- wecare_nfe_kgen.df[brca1_variants,]
+wecare_nfe_brca1_variants.df <- wecare_nfe_variants.df[brca1_variants,]
+wecare_nfe_brca1_phenotypes.df <- wecare_nfe_phenotypes.df[brca1_carrier,]
+
+# rs-ids: all have been revieved in Dec2016 and considered non-pathogenic. 
+wecare_nfe_brca1_variants.df[,c("SplitVarID","Existing_variation")]
+
+# One case with compond heterozygous: P1_H07 carrying rs56012641 & rs56187033
+brca1_homs <- apply(wecare_nfe_brca1_genotypes.mx, 2, sum, na.rm=TRUE) == 2
+wecare_nfe_brca1_genotypes.mx[,brca1_homs]
+
+```
+
+# explore_BRCA2_carriers
+
+10 diferent BRCA2 protein-affecting variants:  
+9 dd-misseswses and 1 relatively common stop-gain (~1%).  
+All reviuved in Dec2016 and considered non-pathogenic.  
+
+40 BRCA2 carriers: most carrying the common stop-gain (both wecare and nfe)   
+
+```{r explore_BRCA2_carriers}
+
+# Select variants
+brca2_variants <- wecare_nfe_variants.df$SYMBOL == "BRCA2"
+sum(brca2_variants) # 10
+
+# Select carriers
+brca2_count_per_case <- apply(wecare_nfe_genotypes.mx[brca2_variants,], 2, sum, na.rm=TRUE)
+summary(as.factor(brca2_count_per_case))
+brca2_carrier <- brca2_count_per_case > 0
+summary(brca2_carrier) # 40
+
+# Subset dataset
+wecare_nfe_brca2_genotypes.mx <- wecare_nfe_genotypes.mx[brca2_variants, brca2_carrier]
+wecare_nfe_brca2_exac.df <- wecare_nfe_exac.df[brca2_variants,]
+wecare_nfe_brca2_kgen.df <- wecare_nfe_kgen.df[brca2_variants,]
+wecare_nfe_brca2_variants.df <- wecare_nfe_variants.df[brca2_variants,]
+wecare_nfe_brca2_phenotypes.df <- wecare_nfe_phenotypes.df[brca2_carrier,]
+
+# rs-ids: all have been revieved in Dec2016 and considered non-pathogenic. 
+wecare_nfe_brca2_variants.df[,c("SplitVarID","Existing_variation")]
+
+# One case with compond heterozygous: P3_C12 carrying rs11571747 & rs11571833
+# the first of the variants is a rare dd missence, the second is a relatively common stop-gain (~1%)
+brca2_homs <- apply(wecare_nfe_brca2_genotypes.mx, 2, sum, na.rm=TRUE) == 2
+sum(brca2_homs)
+wecare_nfe_brca2_genotypes.mx[,brca2_homs]
+colnames(wecare_nfe_brca2_genotypes.mx)[brca2_homs]
+
+```
+
+# explore_PALB2_carriers
+
+6 diferent PALB2 protein-affecting variants: all dd-missenses, one - pretty common (~2.5% AF).  
+All reviuved in Dec2016 and considered non-pathogenic.  
+
+49 PALB2 carriers, most carrying the common missense (in both wecare and nfe)
+
+```{r explore_PALB2_carriers}
+
+# Select variants
+palb2_variants <- wecare_nfe_variants.df$SYMBOL == "PALB2"
+sum(palb2_variants) # 6
+
+# Select carriers
+palb2_count_per_case <- apply(wecare_nfe_genotypes.mx[palb2_variants,], 2, sum, na.rm=TRUE)
+summary(as.factor(palb2_count_per_case)) # No homs or compond hets
+palb2_carrier <- palb2_count_per_case > 0
+summary(palb2_carrier) # 34
+
+# Subset dataset
+wecare_nfe_palb2_genotypes.mx <- wecare_nfe_genotypes.mx[palb2_variants, palb2_carrier]
+wecare_nfe_palb2_exac.df <- wecare_nfe_exac.df[palb2_variants,]
+wecare_nfe_palb2_kgen.df <- wecare_nfe_kgen.df[palb2_variants,]
+wecare_nfe_palb2_variants.df <- wecare_nfe_variants.df[palb2_variants,]
+wecare_nfe_palb2_phenotypes.df <- wecare_nfe_phenotypes.df[palb2_carrier,]
+
+# rs-ids: all have been revieved in Dec2016 and considered non-pathogenic. 
+wecare_nfe_palb2_variants.df[,c("SplitVarID","Existing_variation")]
+
+```
+
+# brca1_brca2_combinations
+
+4 cases simulteneously carrying BRCA1 and BRCA2 variants:
+
+3 in wecare:
+2 (P2_D05, P5_D08): carry het common (6%) dd-missense BRCA1 + het common (1%) stop-gain BRCA2
+1 (P5_D05): carry hom common (0.36%=6%*6%) dd-missense BRCA1 + het rare (0.5%) dd-missense BRCA2
+
+1 in nfe:
+1 (HG00240): carry het common (6%) dd-missense BRCA1 + het common (1%) stop-gain BRCA2
+
+It seems that such number of combinations of non-pathogenic BRCA1-BRCA2 variants (at least for the 1st combination) would be possible to expect by chance.  Presence of such combination in nfe does not support importance of such combination for BC.   
+```{r brca1_brca2_combinations}
+ 
+brca1_brca2_carrier <- brca1_carrier & brca2_carrier
+sum(brca1_brca2_carrier) # 4
+
+brca1_brca2_carrier <- wecare_nfe_phenotypes.df[brca1_brca2_carrier,"wes_id"]
+wecare_nfe_brca1_genotypes.mx[,brca1_brca2_carrier]
+wecare_nfe_brca2_genotypes.mx[,brca1_brca2_carrier]
+
+wecare_nfe_phenotypes.df[c("P2_D05", "P5_D08", "P5_D05"),c("cc","age_dx","age_ref","rstime")]
+
+```
+
+# brca1_palb2_combinations
+
+4 cases simulteneously carrying BRCA1 and PALB2 variants:
+
+1 in wecare: Case P4_C12 simulteneously carries BRCA1 and PALB2 variants:
+het common (6%) dd-missense BRCA1 + het common (3%) dd-missense PALB2.
+
+3 in nfe: NA20506, NA20507, NA20587
+
+Presence of such combination in nfe does not support importance of such combination for BC.  
+
+```{r brca1_palb2_combinations}
+
+brca1_palb2_carrier <- brca1_carrier & palb2_carrier
+sum(brca1_palb2_carrier) # 4
+
+brca1_palb2_carrier <- wecare_nfe_phenotypes.df[brca1_palb2_carrier,"wes_id"]
+brca1_palb2_carrier
+wecare_nfe_brca1_genotypes.mx[,brca1_palb2_carrier]
+wecare_nfe_palb2_genotypes.mx[,brca1_palb2_carrier]
+
+wecare_nfe_phenotypes.df[brca1_palb2_carrier,c("cc","age_dx","age_ref","rstime")]
+
+```
+
+# brca2_palb2_combinations
+none
+
+```{r brca2_palb2_combinations}
+
+brca2_palb2_carrier <- brca2_carrier & palb2_carrier
+sum(brca2_palb2_carrier) # 0
+
+```
+
+# save_data
+
+```{r save_data}
+
+save.image(paste(interim_data_folder, "s07b_filter_by_variant_effect_wecare_nfe_jan2017_explore.RData", sep="/"))
+
+```
+
+# final_section
+
+```{r final_section}
+
+ls()
+sessionInfo()
+Sys.time()
+
+```

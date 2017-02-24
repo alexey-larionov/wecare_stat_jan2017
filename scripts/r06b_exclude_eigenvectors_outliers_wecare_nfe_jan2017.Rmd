@@ -20,6 +20,7 @@ Sys.time()
 # Folders
 setwd("/scratch/medgen/scripts/wecare_stat_01.17/scripts")
 interim_data_folder <- "/scratch/medgen/scripts/wecare_stat_01.17/interim_data"
+results_folder <- "/scratch/medgen/scripts/wecare_stat_01.17/results"
 
 ```
 

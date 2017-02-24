@@ -128,10 +128,11 @@ $(document).ready(function () {
 <h1>start_section</h1>
 <pre class="r"><code># Time stamp
 Sys.time()</code></pre>
-<pre><code>## [1] &quot;2017-02-21 11:45:56 GMT&quot;</code></pre>
+<pre><code>## [1] &quot;2017-02-24 19:42:55 GMT&quot;</code></pre>
 <pre class="r"><code># Folders
 setwd(&quot;/scratch/medgen/scripts/wecare_stat_01.17/scripts&quot;)
-interim_data_folder &lt;- &quot;/scratch/medgen/scripts/wecare_stat_01.17/interim_data&quot;</code></pre>
+interim_data_folder &lt;- &quot;/scratch/medgen/scripts/wecare_stat_01.17/interim_data&quot;
+results_folder &lt;- &quot;/scratch/medgen/scripts/wecare_stat_01.17/results&quot;</code></pre>
 </div>
 <div id="read_data" class="section level1">
 <h1>read_data</h1>
@@ -142,10 +143,10 @@ rm(common_wecare_nfe_eigen, common_wecare_nfe_exac.df, common_wecare_nfe_genotyp
 <div id="check_data" class="section level1">
 <h1>check_data</h1>
 <pre class="r"><code>ls()</code></pre>
-<pre><code>## [1] &quot;interim_data_folder&quot;      &quot;wecare_nfe_eigen&quot;        
-## [3] &quot;wecare_nfe_exac.df&quot;       &quot;wecare_nfe_genotypes.mx&quot; 
-## [5] &quot;wecare_nfe_kgen.df&quot;       &quot;wecare_nfe_phenotypes.df&quot;
-## [7] &quot;wecare_nfe_variants.df&quot;</code></pre>
+<pre><code>## [1] &quot;interim_data_folder&quot;      &quot;results_folder&quot;          
+## [3] &quot;wecare_nfe_eigen&quot;         &quot;wecare_nfe_exac.df&quot;      
+## [5] &quot;wecare_nfe_genotypes.mx&quot;  &quot;wecare_nfe_kgen.df&quot;      
+## [7] &quot;wecare_nfe_phenotypes.df&quot; &quot;wecare_nfe_variants.df&quot;</code></pre>
 <pre class="r"><code>dim(wecare_nfe_genotypes.mx)</code></pre>
 <pre><code>## [1] 275516    678</code></pre>
 <pre class="r"><code>class(wecare_nfe_genotypes.mx)</code></pre>
@@ -482,9 +483,10 @@ summary(as.factor(wecare_nfe_phenotypes.df$cc))</code></pre>
 <div id="data_summary" class="section level1">
 <h1>data_summary</h1>
 <pre class="r"><code>ls()</code></pre>
-<pre><code>## [1] &quot;interim_data_folder&quot;      &quot;wecare_nfe_exac.df&quot;      
-## [3] &quot;wecare_nfe_genotypes.mx&quot;  &quot;wecare_nfe_kgen.df&quot;      
-## [5] &quot;wecare_nfe_phenotypes.df&quot; &quot;wecare_nfe_variants.df&quot;</code></pre>
+<pre><code>## [1] &quot;interim_data_folder&quot;      &quot;results_folder&quot;          
+## [3] &quot;wecare_nfe_exac.df&quot;       &quot;wecare_nfe_genotypes.mx&quot; 
+## [5] &quot;wecare_nfe_kgen.df&quot;       &quot;wecare_nfe_phenotypes.df&quot;
+## [7] &quot;wecare_nfe_variants.df&quot;</code></pre>
 <pre class="r"><code>dim(wecare_nfe_genotypes.mx)</code></pre>
 <pre><code>## [1] 271438    672</code></pre>
 <pre class="r"><code>class(wecare_nfe_genotypes.mx)</code></pre>
@@ -627,9 +629,10 @@ summary(as.factor(wecare_nfe_phenotypes.df$cc))</code></pre>
 <div id="final_section" class="section level1">
 <h1>final_section</h1>
 <pre class="r"><code>ls()</code></pre>
-<pre><code>## [1] &quot;interim_data_folder&quot;      &quot;wecare_nfe_exac.df&quot;      
-## [3] &quot;wecare_nfe_genotypes.mx&quot;  &quot;wecare_nfe_kgen.df&quot;      
-## [5] &quot;wecare_nfe_phenotypes.df&quot; &quot;wecare_nfe_variants.df&quot;</code></pre>
+<pre><code>## [1] &quot;interim_data_folder&quot;      &quot;results_folder&quot;          
+## [3] &quot;wecare_nfe_exac.df&quot;       &quot;wecare_nfe_genotypes.mx&quot; 
+## [5] &quot;wecare_nfe_kgen.df&quot;       &quot;wecare_nfe_phenotypes.df&quot;
+## [7] &quot;wecare_nfe_variants.df&quot;</code></pre>
 <pre class="r"><code>sessionInfo()</code></pre>
 <pre><code>## R version 3.2.3 (2015-12-10)
 ## Platform: x86_64-pc-linux-gnu (64-bit)
@@ -651,7 +654,7 @@ summary(as.factor(wecare_nfe_phenotypes.df$cc))</code></pre>
 ##  [5] yaml_2.1.13     Rcpp_0.12.6     stringi_1.1.1   rmarkdown_1.0  
 ##  [9] knitr_1.13      stringr_1.0.0   digest_0.6.10   evaluate_0.9</code></pre>
 <pre class="r"><code>Sys.time()</code></pre>
-<pre><code>## [1] &quot;2017-02-21 11:47:04 GMT&quot;</code></pre>
+<pre><code>## [1] &quot;2017-02-24 19:44:04 GMT&quot;</code></pre>
 </div>
 
 
