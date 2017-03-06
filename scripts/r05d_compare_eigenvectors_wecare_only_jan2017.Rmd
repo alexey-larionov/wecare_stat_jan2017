@@ -4,7 +4,7 @@ output: html_document
 ---
 
 started: Alexey Larionov, 30Jan2017  
-last updated: Alexey Larionov, 10Feb2017
+last updated: Alexey Larionov, 01Mar2017
 
 # Summary
 
@@ -38,19 +38,19 @@ library(plotly)
 
 # --- eigenvectors --- #
 
-load(paste(interim_data_folder, "r05a_calculate_egenvectors_wecare_only_jan2017.RData", sep="/"))
+load(paste(interim_data_folder, "r05a_calculate_egenvectors_wecare_only_jan2017_explore.RData", sep="/"))
 
-rm(wecare_exac.df, wecare_genotypes.mx, wecare_kgen.df, wecare_nfe_exac.df, wecare_nfe_genotypes.mx, wecare_nfe_kgen.df, wecare_nfe_phenotypes.df, wecare_nfe_variants.df, wecare_variants.df, 
-common_wecare_exac.df, common_wecare_genotypes.mx, common_wecare_kgen.df, common_wecare_variants.df)
+rm(wecare_exac.df, wecare_genotypes.mx, wecare_kgen.df, wecare_variants.df,
+   common_wecare_exac.df, common_wecare_genotypes.mx, common_wecare_kgen.df, common_wecare_variants.df)
 
 # eigenvectors for all variants
-r_evectors.df <- as.data.frame(wecare_eigen$vectors[,1:10])
+r_evectors.df <- as.data.frame(wecare.eigen$vectors[,1:10])
 
 colnames(r_evectors.df) <- c("r_ev1", "r_ev2", "r_ev3", "r_ev4", "r_ev5", "r_ev6", "r_ev7", "r_ev8", "r_ev9", "r_ev10")
 str(r_evectors.df)
 
 # eigenvectors for common variants
-common_r_evectors.df <- as.data.frame(common_wecare_eigen$vectors[,1:10])
+common_r_evectors.df <- as.data.frame(common_wecare.eigen$vectors[,1:10])
 
 colnames(common_r_evectors.df) <- c("r_ev1", "r_ev2", "r_ev3", "r_ev4", "r_ev5", "r_ev6", "r_ev7", "r_ev8", "r_ev9", "r_ev10")
 str(common_r_evectors.df)
@@ -62,12 +62,12 @@ apply(r_evectors.df,2,function(x){sum(x^2)}) # should be close to ones
 # --- eigenvalues --- #
 
 # all variants
-r_evalues.df <- as.data.frame(wecare_eigen$values)
+r_evalues.df <- as.data.frame(wecare.eigen$values)
 colnames(r_evalues.df) <- "evals"
 plot(r_evalues.df$evals, main="Eigenvalues (WECARE, all variants, R-script)")
 
 # common variants
-common_r_evalues.df <- as.data.frame(common_wecare_eigen$values)
+common_r_evalues.df <- as.data.frame(common_wecare.eigen$values)
 colnames(common_r_evalues.df) <- "evals"
 plot(common_r_evalues.df$evals, main="Eigenvalues (WECARE, common variants, R-script)")
 

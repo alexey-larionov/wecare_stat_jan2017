@@ -1,0 +1,518 @@
+---
+title: "matched_analysis_wecare_only_jan2017"
+output: html_document
+---
+
+started: Alexey Larionov, 27Feb2017  
+last updated: Alexey Larionov, 06Mar2017
+
+Based on methods recmmended by DC in e-mail of 18Nov2016
+
+# Summary
+
+# start_section
+
+```{r start_section}
+
+# Start time
+Sys.time()
+
+# Folders
+setwd("/scratch/medgen/scripts/wecare_stat_01.17/scripts")
+interim_data_folder <- "/scratch/medgen/scripts/wecare_stat_01.17/interim_data"
+
+# Load libraries
+library(survival) # for clogit (matched analysis)
+library(VennDiagram)
+
+```
+
+# load_data
+
+```{r load_data}
+
+# Load data
+load(paste(interim_data_folder, "s07a_filter_by_variant_effect_wecare_only_jan2017.RData", sep="/"))
+
+```
+
+# check_data
+
+```{r check_data}
+
+ls()
+
+dim(wecare_genotypes.mx)
+class(wecare_genotypes.mx)
+wecare_genotypes.mx[1:5,1:5]
+
+dim(wecare_phenotypes.df)
+str(wecare_phenotypes.df)
+wecare_phenotypes.df[1:5,1:5]
+
+dim(wecare_variants.df)
+colnames(wecare_variants.df)
+wecare_variants.df[1:5,1:5]
+
+dim(wecare_kgen.df)
+colnames(wecare_kgen.df)
+wecare_kgen.df[1:5,1:5]
+
+dim(wecare_exac.df)
+colnames(wecare_exac.df)
+wecare_exac.df[1:5,1:5]
+
+# Check consistency of rownames and colnames
+sum(colnames(wecare_genotypes.mx) != rownames(wecare_phenotypes.df))
+sum(rownames(wecare_genotypes.mx) != rownames(wecare_variants.df))
+sum(rownames(wecare_genotypes.mx) != rownames(wecare_kgen.df))
+sum(rownames(wecare_genotypes.mx) != rownames(wecare_exac.df))
+
+```
+
+# prepare_data_for_analysis
+
+No missed data in any covariate, outcome or supplementary info 
+
+```{r prepare_data_for_analysis}
+
+# Eigenvectors
+eigenvectors <- as.matrix(wecare_phenotypes.df[,c("eig1_wes", "eig2_wes", "eig3_wes")])  
+sum(is.na(eigenvectors)) # 0
+
+# Matching variables
+matching_variables <- as.matrix(wecare_phenotypes.df[,c("age_dx", "rstime")])  
+sum(is.na(matching_variables)) # 0
+
+# Matched pairs IDs
+pairID <- wecare_phenotypes.df$setno
+sum(is.na(pairID))
+
+# Make a variable for hormone treatment.
+# There is one case with no data on endocrine treatment
+# It could be imputed; however, it is not needed because 
+# treatment is combined endo- and chemo (see below)
+hormone <- wecare_phenotypes.df$hormone
+sum(hormone, na.rm=TRUE)
+sum(is.na(hormone))
+
+# Make variable for cytotoxic treatment
+summary(as.factor(wecare_phenotypes.df$chemo_cat))
+chemo <- wecare_phenotypes.df$chemo_cat != "no"
+sum(chemo)
+sum(is.na(chemo))
+
+# Plot venn diagram of chemo and hormone
+grid.newpage()
+draw.pairwise.venn(
+  area1=sum(hormone, na.rm=TRUE), 
+  area2=sum(chemo), 
+  cross.area=sum(hormone & chemo, na.rm=TRUE), 
+  category=c(
+    paste("hormone\n", sum(hormone, na.rm=TRUE)),
+    paste("chemo\n", sum(chemo))),
+  fill=c("red", "blue"), 
+  alpha = c(0.3, 0.3),
+  cex=2, cat.fontface=4, fontfamily=3)
+
+# Make joined treatment variable
+treatment <- as.numeric(chemo | hormone)
+sum(is.na(treatment))
+sum(treatment)
+
+# Explore case with missed hormone data:
+# no need in treatment imputation because it receives cytotoxic treatment anyway
+wecare_phenotypes.df[is.na(wecare_phenotypes.df$hormone),c("wes_id","hormone","chemo_cat")]
+
+# Number of pregnancies
+num_preg <- wecare_phenotypes.df$num_preg
+sum(is.na(num_preg))
+summary(as.factor(num_preg))
+
+# Outcomes
+Y <- wecare_phenotypes.df$cc
+sum(is.na(Y))
+
+# Genes
+genes <- as.vector(wecare_variants.df$SYMBOL)
+sum(is.na(genes))
+
+# Raw AFs headers
+raw_afs_cols <- c(
+    "ac_wecare_cln", "an_wecare_cln", "af_wecare_cln", 
+    "ac_ubc_cln", "an_ubc_cln", "af_ubc_cln", 
+    "ac_cbc_cln", "an_cbc_cln", "af_cbc_cln", 
+    "ac_ubc_fam_cln", "an_ubc_fam_cln", "af_ubc_fam_cln", 
+    "ac_ubc_nofam_cln", "an_ubc_nofam_cln", "af_ubc_nofam_cln", 
+    "ac_cbc_fam_cln", "an_cbc_fam_cln", "af_cbc_fam_cln", 
+    "ac_cbc_nofam_cln", "an_cbc_nofam_cln", "af_cbc_nofam_cln")
+
+# Output AFs headers (w/o "_cln")
+afs_cols <- c(
+    "ac_wecare", "an_wecare", "af_wecare", 
+    "ac_ubc", "an_ubc", "af_ubc", 
+    "ac_cbc", "an_cbc", "af_cbc", 
+    "ac_ubc_fam", "an_ubc_fam", "af_ubc_fam", 
+    "ac_ubc_nofam", "an_ubc_nofam", "af_ubc_nofam", 
+    "ac_cbc_fam", "an_cbc_fam", "af_cbc_fam", 
+    "ac_cbc_nofam", "an_cbc_nofam", "af_cbc_nofam")
+
+# Clean-up
+rm(chemo, hormone)
+
+```
+
+# do_analysis
+
+Prepare output table, then
+loop through each gene: 
+- get varaints per gene  
+- get tables with varaints and genotypes data  
+- check and correct variants with inverted AFs (varaints with ALT AF > 0.5)  
+- recalculate AFs (will differ in the inverted varaints)  
+- calculate matched and non-matched amnalyses  
+- write results to text table  
+
+```{r do_analysis}
+
+# --- Prepare output table --- # 
+
+# write header to output file
+header <- c("gene", "n_variants", "multilaalelic_varaints", "inverted_afs", 
+            "p_clogit", "p_clogit_anova", "p_glm", "p_glm_lrt", afs_cols)
+
+write(paste(header, sep="", collapse="\t"),
+  paste(results_folder, "s08a_matched_analysis_wecare_only_jan2017.txt", sep="/"))
+
+# Clean-up
+rm(header)
+
+# Function to count alleles (2x for diploid)
+get_allele_number.udf <- function(x){2*sum(!is.na(x))}
+
+# --- Loop through each gene --- #
+
+# Test genes (for debuging)
+#gene="ATM" # many variants per gene
+#gene="CASP9" # one variant per gene 
+#gene="ADH1B" # contains a rare version of SNP in ref genome (2 vars altogether)
+#gene="SLC27A3" # contains a multiallelic SNP (5 vars altogether)
+#gene="CLC9A3R1" # a candidate from previous analyses
+
+#gene="CCDC27" # failed fitting clogit ??
+
+#genes <- c("ATM", "CASP9", "ADH1B", "SLC27A3", "SLC9A3R1")
+
+for(gene in genes){
+  
+  # gene <- "ATM"
+  
+  # --- Initial settings for a gene --- # 
+
+  # Get list of variants for the gene
+  variants <- wecare_variants.df$SYMBOL == gene
+  num_varaints <- sum(variants)
+  var_IDs <- as.vector(wecare_variants.df[variants,"SplitVarID"])
+  #num_varaints
+  #var_IDs
+  
+  # Table with varaints data
+  # Note: I specify the class (i.e. data frame or matrix) and the num of rows
+  # to ensure that singel-variant genes are proecessed as expected; 
+  # otherwise they might be converted to vectors etc. 
+  variants.df <- as.data.frame(wecare_variants.df[variants,], nrow=num_varaints)
+  #dim(variants.df)
+  #variants.df[,c(1:5,23,29)]
+
+  # Flag genes containing multiallelics varaints
+  multiallelic_varaints <- FALSE
+  if(sum(variants.df$"Multiallelic") > 0){
+      multiallelic_varaints <- TRUE
+  }
+  multiallelic_varaints
+
+  # Raw allelic frequencies and counts
+  raw_afs.df <- as.data.frame(variants.df[, raw_afs_cols])
+  colnames(raw_afs.df) <- afs_cols # remove tne "_cln" suffic from AFs colnames
+  #dim(raw_afs.df)
+  #raw_afs.df[,1:5]
+  
+  # Raw AFs in controls (ubc)
+  raw_afs_in_controls <- variants.df$af_ubc_cln
+  #raw_afs_in_controls
+
+  # Raw genotypes
+  # Note: I specify the class (i.e. data frame or matrix) and the num of rows
+  # to ensure that singel-variant genes are proecessed as expected; 
+  # otherwise they might be converted to vectors etc. 
+  raw_genotypes.mx <- matrix(wecare_genotypes.mx[variants,], nrow=num_varaints)
+  rownames(raw_genotypes.mx) <- var_IDs
+  colnames(raw_genotypes.mx) <- colnames(wecare_genotypes.mx)
+  #dim(raw_genotypes.mx)
+  #raw_genotypes.mx[,1:5]
+  
+  # Assume no inverted AFs in controls (no controls AFs > 0.5)
+  inverted_afs <- FALSE
+  afs_in_controls <- raw_afs_in_controls
+  genotypes.mx <- raw_genotypes.mx
+  afs.df <- raw_afs.df
+  
+  ##############################################################
+  #             Check and correct for inverted AFs             #
+  ##############################################################
+  
+  # For each var in the gene
+  for(var in 1:num_varaints){
+    
+    # var <- 1
+    
+    # Check whether this variant has inverted controls AF
+    if(raw_afs_in_controls[var] > 0.5){
+      
+      #--------------------------------------------------------#
+      #                Set flag for inverted_afs               #
+      #--------------------------------------------------------#
+      
+      inverted_afs <- TRUE
+      
+      #--------------------------------------------------------#
+      #      Update genotypes (swop 0 and 2 in genotypes)      #
+      #--------------------------------------------------------#
+      
+      raw_var_genotypes <- raw_genotypes.mx[var,]
+      var_genotypes <- raw_genotypes.mx[var,]
+      0 -> var_genotypes[raw_var_genotypes == 2]
+      2 -> var_genotypes[raw_var_genotypes == 0]
+      var_genotypes -> genotypes.mx[var,]
+      
+      # Clean-up
+      rm(raw_var_genotypes)
+      
+      #--------------------------------------------------------#
+      #                     Recalculate AFs                    #
+      #--------------------------------------------------------#
+      
+      afs.df[var,"ac_wecare"] <- sum(var_genotypes, na.rm=TRUE)
+      afs.df[var,"an_wecare"] <- get_allele_number.udf(var_genotypes)
+      afs.df[var,"af_wecare"] <- afs.df[var,"ac_wecare"]/afs.df[var,"an_wecare"]
+
+      ubc_cases <- wecare_phenotypes.df$cc == 0 
+      afs.df[var,"ac_ubc"] <- sum(var_genotypes[ubc_cases], na.rm=TRUE)
+      afs.df[var,"an_ubc"] <- get_allele_number.udf(var_genotypes[ubc_cases])
+      afs.df[var,"af_ubc"] <- afs.df[var,"ac_ubc"]/afs.df[var,"an_ubc"]
+
+      cbc_cases <- wecare_phenotypes.df$cc == 1 
+      afs.df[var,"ac_cbc"] <- sum(var_genotypes[cbc_cases], na.rm=TRUE)
+      afs.df[var,"an_cbc"] <- get_allele_number.udf(var_genotypes[cbc_cases])
+      afs.df[var,"af_cbc"] <- afs.df[var,"ac_cbc"]/afs.df[var,"an_cbc"]
+
+      ubc_fam_cases <- wecare_phenotypes.df$cc == 0 & wecare_phenotypes.df$family_history == 1
+      afs.df[var,"ac_ubc_fam"] <- sum(var_genotypes[ubc_fam_cases], na.rm=TRUE)
+      afs.df[var,"an_ubc_fam"] <- get_allele_number.udf(var_genotypes[ubc_fam_cases])
+      afs.df[var,"af_ubc_fam"] <- afs.df[var,"ac_ubc_fam"]/afs.df[var,"an_ubc_fam"]
+
+      ubc_nofam_cases <- wecare_phenotypes.df$cc == 0 & wecare_phenotypes.df$family_history == 0
+      afs.df[var,"ac_ubc_nofam"] <- sum(var_genotypes[ubc_nofam_cases], na.rm=TRUE)
+      afs.df[var,"an_ubc_nofam"] <- get_allele_number.udf(var_genotypes[ubc_nofam_cases])
+      afs.df[var,"af_ubc_nofam"] <- afs.df[var,"ac_ubc_nofam"]/afs.df[var,"an_ubc_nofam"]
+
+      cbc_fam_cases <- wecare_phenotypes.df$cc == 1 & wecare_phenotypes.df$family_history == 1
+      afs.df[var,"ac_cbc_fam"] <- sum(var_genotypes[cbc_fam_cases], na.rm=TRUE)
+      afs.df[var,"an_cbc_fam"] <- get_allele_number.udf(var_genotypes[cbc_fam_cases])
+      afs.df[var,"af_cbc_fam"] <- afs.df[var,"ac_cbc_fam"]/afs.df[var,"an_cbc_fam"]
+
+      cbc_nofam_cases <- wecare_phenotypes.df$cc == 1 & wecare_phenotypes.df$family_history == 0
+      afs.df[var,"ac_cbc_nofam"] <- sum(var_genotypes[cbc_nofam_cases], na.rm=TRUE)
+      afs.df[var,"an_cbc_nofam"] <- get_allele_number.udf(var_genotypes[cbc_nofam_cases])
+      afs.df[var,"af_cbc_nofam"] <- afs.df[var,"ac_cbc_nofam"]/afs.df[var,"an_cbc_nofam"]
+      
+      #--------------------------------------------------------#
+      #            Check and update the control's af           #
+      #--------------------------------------------------------#
+      
+      if( afs.df[var, "af_ubc"] + raw_afs_in_controls[var] != 1 ){
+        stop(paste("Error during AFs inversion, gene:", gene))
+      } # there could be rounding diferences in order of 10E-15
+      
+      afs_in_controls[var] <- afs.df[var, "af_ubc"] 
+      
+      # Clean-up
+      rm(ubc_cases, cbc_cases, ubc_fam_cases, ubc_nofam_cases, 
+         cbc_fam_cases, cbc_nofam_cases, var_genotypes)
+
+      #--------------------------------------------------------#
+    } # done the genotypes inversion for a variant (if needed) #
+      #--------------------------------------------------------#
+
+    ############################################################
+  } #             Check next variant for the gene              #
+    ############################################################
+    
+  # Clean-up
+  rm(raw_afs_in_controls, raw_genotypes.mx, raw_afs.df, var)
+  
+  # Get aggregated allelic counts and fractions
+  afs <- apply(afs.df, 2, sum, na.rm=TRUE)
+  afs["af_wecare"] <- afs["ac_wecare"] / afs["an_wecare"]
+  afs["af_ubc"] <- afs["ac_ubc"] / afs["an_ubc"]
+  afs["af_cbc"] <- afs["ac_cbc"] / afs["an_cbc"]
+  afs["af_ubc_fam"] <- afs["ac_ubc_fam"] / afs["an_ubc_fam"]
+  afs["af_ubc_nofam"] <- afs["ac_ubc_nofam"] / afs["an_ubc_nofam"]
+  afs["af_cbc_fam"] <- afs["ac_cbc_fam"] / afs["an_cbc_fam"]
+  afs["af_cbc_nofam"] <- afs["ac_cbc_nofam"] / afs["an_cbc_nofam"]
+  
+  # Clean-up
+  rm(afs.df)
+  
+  # Get respective afs in exac ???
+
+  ####################################################################################
+  #                     Prepare predictive variable for analyses                     #
+  ####################################################################################
+
+  # Transpose genotypes (make variants in columns)
+  g <- t(genotypes.mx)
+  
+  # Impute missed genotypes (variant-wise means)
+  g <- apply(g, 2, function(v) { ifelse(is.na(v), mean(v, na.rm=T), v) })
+
+  # Calculate weights (the same as SKAT's default weights)
+  w <- dbeta(afs_in_controls, 1, 25)
+
+  # Calculate the predictive variable
+  X <- g%*%w    # sum of weighted ACs per case
+  
+  # Clean-up
+  rm(genotypes.mx, g, w)
+
+  ####################################################################################
+  # Burden type analysis using conditional logistic regression with a LRT and weight #
+  ####################################################################################
+  
+  # requires library(survival)
+  # What is about the presense of unmatched? 
+  # What is about absense of covatiates in DC's example? 
+  
+  # exploring reg and anova(reg) objects:
+  # 2-nd eigenvector is close to significance ...
+  # Treatment is close to significance ...
+  # NumPreg is significant ...
+
+  clogit.reg <- clogit(Y ~ X + 
+           eigenvectors + 
+           treatment + 
+           num_preg + 
+           strata(pairID))
+  
+  p.clogit <- summary(clogit.reg)$coef["X", "Pr(>|z|)"]
+  p.clogit.anova = anova(clogit.reg)["X","Pr(>|Chi|)"]
+  
+  # clogit.reg
+  # summary(clogit.reg)
+  # anova(clogit.reg)
+  # p.clogit
+  # p.clogit.anova
+  
+  # Clean-up
+  rm(clogit.reg)
+
+  ####################################################################################
+  #                              Non-matched analysis                                #
+  ####################################################################################
+
+  # matching_variables <- as.matrix(wecare_phenotypes.df[,c("age_dx", "rstime")])  
+  
+  # Exploring reg objects:
+  # 2nd eigenvector, treatment and num preg are significant 
+  
+  dat <- data.frame(Y, X, matching_variables)
+  
+  glm.reg.null <- glm(Y ~ 
+      age_dx + rstime + 
+      eigenvectors + 
+      treatment +
+      num_preg, 
+    family=binomial(link="logit"), 
+    data=dat)
+
+  glm.reg <- glm(Y ~ X +
+      age_dx + rstime + 
+      eigenvectors + 
+      treatment +
+      num_preg, 
+    family=binomial(link="logit"), 
+    data=dat)
+  
+  # Read p-value from the glm model
+  p.glm <- summary(glm.reg)$coef["X", "Pr(>|z|)"]
+  
+  # Calculate p-value estimate using LRT
+  chi.stat.LRT = 2*(logLik(glm.reg) - logLik(glm.reg.null))
+  p.glm.lrt = 1-pchisq(chi.stat.LRT, df=1)
+  
+  #p.glm
+  #p.glm.lrt
+
+  #glm.reg.null
+  #summary(glm.reg.null)
+  #anova(glm.reg.null)
+
+  #glm.reg
+  #summary(glm.reg)
+  #anova(glm.reg)
+  
+  # Clean-up
+  rm(dat, glm.reg, glm.reg.null, chi.stat.LRT)
+  
+  ####################################################################################
+  #                                  Write result                                    #
+  ####################################################################################
+  
+  # Compile result
+  # Header: "gene", "n_variants", "multilaalelic_varaints", "inverted_afs", 
+  #         "p_clogit", "p_clogit_anova", "p_glm", "p_glm_lrt", afs_cols
+  result <- c(gene, num_varaints, multiallelic_varaints, inverted_afs, 
+              p.clogit, p.clogit.anova, p.glm, p.glm.lrt, afs)
+    
+  # Record result to the output table
+  write(paste(result, sep="", collapse="\t"),
+    paste(results_folder, "s08a_matched_analysis_wecare_only_jan2017.txt", sep="/"),
+    append = TRUE)
+
+  # Clean-up
+  rm(result, variants, variants.df, var_IDs, num_varaints, multiallelic_varaints, inverted_afs, 
+     p.clogit, p.clogit.anova, p.glm, p.glm.lrt, afs, afs_in_controls, X)
+  
+} # next gene
+
+# Clean-up
+rm(gene, genes, Y, eigenvectors, matching_variables, treatment, num_preg, 
+   pairID, afs_cols, raw_afs_cols, get_allele_number.udf)
+
+```
+
+# read_results_table
+
+```{r read_results_table}
+
+results_table <- read.table(paste(results_folder, "s08a_matched_analysis_wecare_only_jan2017.txt", sep="/"), header = TRUE)
+
+```
+
+# save_data
+
+```{r save_data}
+
+save.image(paste(interim_data_folder, "s08a_matched_analysis_wecare_only_jan2017.RData", sep="/"))
+
+```
+
+# final_section
+
+```{r final_section}
+
+ls()
+sessionInfo()
+Sys.time()
+
+```

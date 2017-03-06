@@ -8,14 +8,13 @@ last updated: Alexey Larionov, 08Feb2017
 
 # Summary
 
-This is the last step that prepares dataset for downstream analyses.  
+This script performs the following steps:  
 
-It performs the following:  
-- remove cases, which failed sequencing
+- removes cases, which failed (sequencing) filters
 
-- remove variants absent in the retained cases  
+- removes variants absent in the retained cases  
 
-- explore the remaining data  
+- explores the remaining data  
 
 Exac and kgen include only variants that were biallelic in exac/ kgen respectively
 

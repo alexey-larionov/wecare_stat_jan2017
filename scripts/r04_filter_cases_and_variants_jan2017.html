@@ -122,11 +122,11 @@ $(document).ready(function () {
 <p>started: Alexey Larionov, 01Mar2016<br />last updated: Alexey Larionov, 08Feb2017</p>
 <div id="summary" class="section level1">
 <h1>Summary</h1>
-<p>This is the last step that prepares dataset for downstream analyses.</p>
-<p>It performs the following:<br />- remove cases, which failed sequencing</p>
+<p>This script performs the following steps:</p>
 <ul>
-<li><p>remove variants absent in the retained cases</p></li>
-<li><p>explore the remaining data</p></li>
+<li><p>removes cases, which failed (sequencing) filters</p></li>
+<li><p>removes variants absent in the retained cases</p></li>
+<li><p>explores the remaining data</p></li>
 </ul>
 <p>Exac and kgen include only variants that were biallelic in exac/ kgen respectively</p>
 </div>
@@ -134,7 +134,7 @@ $(document).ready(function () {
 <h1>start_section</h1>
 <pre class="r"><code># Time stamp
 Sys.time()</code></pre>
-<pre><code>## [1] &quot;2017-02-08 16:15:25 GMT&quot;</code></pre>
+<pre><code>## [1] &quot;2017-02-28 14:12:05 GMT&quot;</code></pre>
 <pre class="r"><code># Folders
 setwd(&quot;/scratch/medgen/scripts/wecare_stat_01.17/scripts&quot;)
 interim_data_folder &lt;- &quot;/scratch/medgen/scripts/wecare_stat_01.17/interim_data&quot;
@@ -166,15 +166,16 @@ library(VennDiagram)</code></pre>
 ## Var000000012       0       0      NA       0       0
 ## Var000000013       0       0      NA       0       0</code></pre>
 <pre class="r"><code>dim(phenotypes.df)</code></pre>
-<pre><code>## [1] 710  28</code></pre>
+<pre><code>## [1] 710  29</code></pre>
 <pre class="r"><code>str(phenotypes.df)</code></pre>
-<pre><code>## 'data.frame':    710 obs. of  28 variables:
+<pre><code>## 'data.frame':    710 obs. of  29 variables:
 ##  $ wes_id        : chr  &quot;HG00097&quot; &quot;HG00099&quot; &quot;HG00100&quot; &quot;HG00102&quot; ...
 ##  $ gwas_id       : chr  NA NA NA NA ...
 ##  $ merged_id     : chr  NA NA NA NA ...
 ##  $ filter        : chr  &quot;pass&quot; &quot;pass&quot; &quot;pass&quot; &quot;pass&quot; ...
 ##  $ cc            : num  -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 ...
 ##  $ setno         : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ registry      : chr  NA NA NA NA ...
 ##  $ family_history: int  NA NA NA NA NA NA NA NA NA NA ...
 ##  $ age_dx        : int  NA NA NA NA NA NA NA NA NA NA ...
 ##  $ age_ref       : num  NA NA NA NA NA NA NA NA NA NA ...
@@ -290,7 +291,7 @@ sum(pf_cases)</code></pre>
 <pre><code>## [1] 678</code></pre>
 <pre class="r"><code>phenotypes.df &lt;- phenotypes.df[pf_cases,]
 dim(phenotypes.df)</code></pre>
-<pre><code>## [1] 678  28</code></pre>
+<pre><code>## [1] 678  29</code></pre>
 <pre class="r"><code>retained_cases &lt;- phenotypes.df$wes_id
 
 gt.mx &lt;- gt.mx[,retained_cases]
@@ -417,15 +418,16 @@ rm(gt.mx, phenotypes.df, variants.df, kgen.df, exac.df)</code></pre>
 ## Var000000012       0       0      NA       0       0
 ## Var000000013       0       0      NA       0       0</code></pre>
 <pre class="r"><code>dim(wecare_nfe_phenotypes.df)</code></pre>
-<pre><code>## [1] 678  28</code></pre>
+<pre><code>## [1] 678  29</code></pre>
 <pre class="r"><code>str(wecare_nfe_phenotypes.df)</code></pre>
-<pre><code>## 'data.frame':    678 obs. of  28 variables:
+<pre><code>## 'data.frame':    678 obs. of  29 variables:
 ##  $ wes_id        : chr  &quot;HG00097&quot; &quot;HG00099&quot; &quot;HG00100&quot; &quot;HG00102&quot; ...
 ##  $ gwas_id       : chr  NA NA NA NA ...
 ##  $ merged_id     : chr  NA NA NA NA ...
 ##  $ filter        : chr  &quot;pass&quot; &quot;pass&quot; &quot;pass&quot; &quot;pass&quot; ...
 ##  $ cc            : num  -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 ...
 ##  $ setno         : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ registry      : chr  NA NA NA NA ...
 ##  $ family_history: int  NA NA NA NA NA NA NA NA NA NA ...
 ##  $ age_dx        : int  NA NA NA NA NA NA NA NA NA NA ...
 ##  $ age_ref       : num  NA NA NA NA NA NA NA NA NA NA ...
@@ -575,7 +577,7 @@ sum(colnames(wecare_nfe_genotypes.mx) != rownames(wecare_nfe_phenotypes.df))</co
 ## [19] evaluate_0.9         rmarkdown_1.0        labeling_0.3        
 ## [22] stringi_1.1.1        scales_0.4.1</code></pre>
 <pre class="r"><code>Sys.time()</code></pre>
-<pre><code>## [1] &quot;2017-02-08 16:16:38 GMT&quot;</code></pre>
+<pre><code>## [1] &quot;2017-02-28 14:13:19 GMT&quot;</code></pre>
 </div>
 
 

@@ -4,11 +4,11 @@ output: html_document
 ---
 
 started: Alexey Larionov, 2016  
-last updated: Alexey Larionov, 24Feb2017
+last updated: Alexey Larionov, 03Mar2017
 
 # Summary
 
-271,438 -> 23,336 variants (10,122 genes)
+271,438 -> 23,364 variants (10,130 genes)
 
 ### Including Loss of function variants
 "splice_acceptor_variant", "splice_donor_variant", "stop_gain", "stop_lost", 
@@ -21,14 +21,20 @@ last updated: Alexey Larionov, 24Feb2017
 "likely_pathogenic", "risk_factor", "pathogenic", "association", "protective", 
 "drug_response": 839 variants
 
-### Excluding variants with high AF in 1k (i.e. when rare sequence versions are in Ref Genome)
-EUR_AF>0.9: 28 from above selection 
-(of 2,350 total in the whole variantset)
-
 ### Total retained
-**Variants:** 23,336  
-**Genes:** 10,122  
-~2 protein-affecting variants per gene
+**Variants:** 23,364  
+**Genes:** 10,130  
+~2.3 protein-affecting variants per gene
+
+## NOT excluding variants with high AF in 1k 
+
+These are sequence versions from Ref genome, which ALTs are common in 1k:
+
+EUR_AF>0.5: 156 from above selection  
+EUR_AF>0.9: 28 from above selection (2,350 total in the whole variantset)  
+
+These sequences are preserved in this script.  
+However, they will need special treatment in downstream analysis. 
 
 # start_section
 
@@ -148,10 +154,11 @@ unique(unlist(strsplit(as.vector(wecare_nfe_variants.df$CLIN_SIG), split="\\&"))
 
 ## variants_frequent_in_kgen_and_exac
 
-2,350 rare sequence versions slipped into reference genome (b37)  
+2,350 rare sequence versions are present into reference genome (b37)  
 ~1% of all variants in the datset
 
-They should be treated with care because "variants" called in these sites represent 
+Tehy will be preserbved; however they should be treated specially 
+in downstream analyses because "variants" called in these sites represent 
 sequence versions common in humans, despite the misleading "low" MAFs in some databases. 
 
 ```{r variants_frequent_in_kgen_and_exac}
@@ -463,46 +470,9 @@ rm(missense_wecare_nfe.mean, lof_wecare_nfe.mean, clinsig_wecare_nfe.mean)
 
 ```
 
-## explore_and_remove_frequent_in_kgen
-
-```{r explore_and_remove_frequent_in_kgen}
-
-# --- explore_frequent_in_kgen --- #
-
-# Count variants that will be excluded because of high frequency in kgen
-kgen_90 <- wecare_nfe_kgen.df$kgen.EUR_AF > 0.9
-summary(kgen_90)
-FALSE -> kgen_90[is.na(kgen_90)]
-summary(kgen_90) # 2,350
-
-sum(kgen_90 & lof) # 17
-sum(kgen_90 & clinsig) # 4
-sum(kgen_90 & missense) # 7
-
-sum(lof_missense & kgen_90) # 0
-sum(clinsig_missense & kgen_90) # 0
-sum(lof_clinsig & kgen_90) # 0
-
-selected_kgen_90 <- selected_variants & kgen_90
-sum(selected_kgen_90) # 28
-
-# Look at the genes affected by kgen_90 filter (just 3 of them have been excluded)
-# For now they will be excluded; in future they maybe "reverted"
-as.vector(wecare_nfe_variants.df[selected_kgen_90,c("SYMBOL")])
-
-# --- Remove frequent in kgen --- #
-
-selected_variants <- selected_variants & !kgen_90
-summary(selected_variants) # 23,336
-
-# Clean-up
-rm(lof, clinsig, missense, lof_clinsig, clinsig_missense, lof_missense, lof_clinsig_missense, kgen_90, selected_kgen_90, summary_counts.df)
-
-```
-
 # keep_selected_variants_only
 
-271,438 -> 23,336
+271,438 -> 23,364
 
 ```{r keep_selected_variants_only}
 
@@ -511,9 +481,36 @@ wecare_nfe_kgen.df <- wecare_nfe_kgen.df[selected_variants,]
 wecare_nfe_exac.df <- wecare_nfe_exac.df[selected_variants,]
 wecare_nfe_genotypes.mx <- wecare_nfe_genotypes.mx[selected_variants,]
 
+
+dim(wecare_nfe_variants.df)
+dim(wecare_nfe_kgen.df)
+dim(wecare_nfe_exac.df)
+dim(wecare_nfe_genotypes.mx)
+
 # Clean-up
 rm(selected_variants)
   
+```
+
+# check_frequent_in_Kgen
+
+These variants are preserved;
+However, they will require special treatment in downstream analysis
+
+```{r check_frequent_in_Kgen}
+
+x <- wecare_nfe_kgen.df$kgen.EUR_AF > 0.9
+FALSE -> x[is.na(x)]
+x <- wecare_nfe_kgen.df[x, "SplitVarID"]
+x <- as.character(x)
+length(x)
+wecare_nfe_variants.df[unlist(x),c("SplitVarID","SYMBOL")]
+
+y <- wecare_nfe_kgen.df$kgen.EUR_AF > 0.5
+sum(y, na.rm=TRUE)
+
+rm(x,y)
+
 ```
 
 # count_variants_per_gene
@@ -521,7 +518,7 @@ rm(selected_variants)
 ```{r count_variants_per_gene}
 
 # Get number of genes
-length(unique(wecare_nfe_variants.df$SYMBOL)) # 10,122
+length(unique(wecare_nfe_variants.df$SYMBOL)) # 10,130
 
 # Look at the top genes
 x <- sort(table(as.vector(wecare_nfe_variants.df$SYMBOL)), decreasing = TRUE)
@@ -536,7 +533,7 @@ write.table(y, file=paste(results_folder, "wecare_nfe_variants_per_gene.txt", se
 z <- wecare_nfe_variants.df %>%  group_by(SYMBOL) %>% summarise(n())
 "vars_count" -> colnames(z)[2]
 hist(z$vars_count, main="Histogram for numbers of protein-affecting variants per gene (wecare-nfe)", xlab="Variants per gene", ylab="Number of genes", ylim=c(0,8000), breaks=25, labels = TRUE)
-mean(z$vars_count) # 2.009917
+mean(z$vars_count) # 2.306417
 
 # Clean-up
 rm(x,y,z)

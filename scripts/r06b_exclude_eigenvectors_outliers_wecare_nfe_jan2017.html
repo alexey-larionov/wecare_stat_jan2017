@@ -119,7 +119,7 @@ $(document).ready(function () {
 </div>
 
 
-<p>started: Alexey Larionov, 16Feb2017<br />last updated: Alexey Larionov, 21Feb2017</p>
+<p>started: Alexey Larionov, 16Feb2017<br />last updated: Alexey Larionov, 01Mar2017</p>
 <div id="summary" class="section level1">
 <h1>Summary</h1>
 <p>Exclude eigenvectors outliers and clean data for wecare nfe jan2017 dataset</p>
@@ -128,7 +128,7 @@ $(document).ready(function () {
 <h1>start_section</h1>
 <pre class="r"><code># Time stamp
 Sys.time()</code></pre>
-<pre><code>## [1] &quot;2017-02-24 19:42:55 GMT&quot;</code></pre>
+<pre><code>## [1] &quot;2017-03-01 22:13:19 GMT&quot;</code></pre>
 <pre class="r"><code># Folders
 setwd(&quot;/scratch/medgen/scripts/wecare_stat_01.17/scripts&quot;)
 interim_data_folder &lt;- &quot;/scratch/medgen/scripts/wecare_stat_01.17/interim_data&quot;
@@ -136,17 +136,15 @@ results_folder &lt;- &quot;/scratch/medgen/scripts/wecare_stat_01.17/results&quo
 </div>
 <div id="read_data" class="section level1">
 <h1>read_data</h1>
-<pre class="r"><code>load(paste(interim_data_folder, &quot;r05b_calculate_egenvectors_wecare_nfe_jan2017.RData&quot;, sep=&quot;/&quot;))
-
-rm(common_wecare_nfe_eigen, common_wecare_nfe_exac.df, common_wecare_nfe_genotypes.mx, common_wecare_nfe_kgen.df, common_wecare_nfe_variants.df)</code></pre>
+<pre class="r"><code>load(paste(interim_data_folder, &quot;r05b_calculate_egenvectors_wecare_nfe_jan2017.RData&quot;, sep=&quot;/&quot;))</code></pre>
 </div>
 <div id="check_data" class="section level1">
 <h1>check_data</h1>
 <pre class="r"><code>ls()</code></pre>
 <pre><code>## [1] &quot;interim_data_folder&quot;      &quot;results_folder&quot;          
-## [3] &quot;wecare_nfe_eigen&quot;         &quot;wecare_nfe_exac.df&quot;      
-## [5] &quot;wecare_nfe_genotypes.mx&quot;  &quot;wecare_nfe_kgen.df&quot;      
-## [7] &quot;wecare_nfe_phenotypes.df&quot; &quot;wecare_nfe_variants.df&quot;</code></pre>
+## [3] &quot;wecare_nfe_exac.df&quot;       &quot;wecare_nfe_genotypes.mx&quot; 
+## [5] &quot;wecare_nfe_kgen.df&quot;       &quot;wecare_nfe_phenotypes.df&quot;
+## [7] &quot;wecare_nfe_variants.df&quot;   &quot;wecare_nfe.eigen&quot;</code></pre>
 <pre class="r"><code>dim(wecare_nfe_genotypes.mx)</code></pre>
 <pre><code>## [1] 275516    678</code></pre>
 <pre class="r"><code>class(wecare_nfe_genotypes.mx)</code></pre>
@@ -159,9 +157,9 @@ rm(common_wecare_nfe_eigen, common_wecare_nfe_exac.df, common_wecare_nfe_genotyp
 ## Var000000012       0       0      NA       0       0
 ## Var000000013       0       0      NA       0       0</code></pre>
 <pre class="r"><code>dim(wecare_nfe_variants.df)</code></pre>
-<pre><code>## [1] 275516     26</code></pre>
+<pre><code>## [1] 275516     23</code></pre>
 <pre class="r"><code>str(wecare_nfe_variants.df)</code></pre>
-<pre><code>## 'data.frame':    275516 obs. of  26 variables:
+<pre><code>## 'data.frame':    275516 obs. of  23 variables:
 ##  $ SplitVarID        : Factor w/ 343824 levels &quot;Var000000001&quot;,..: 2 8 9 12 13 20 21 22 23 24 ...
 ##  $ SYMBOL            : Factor w/ 19862 levels &quot;A1BG&quot;,&quot;A1CF&quot;,..: 9131 14924 14924 14924 14924 11149 11149 11149 11149 11149 ...
 ##  $ TYPE              : Factor w/ 2 levels &quot;INDEL&quot;,&quot;SNP&quot;: 2 2 2 1 2 2 2 2 2 2 ...
@@ -184,10 +182,7 @@ rm(common_wecare_nfe_eigen, common_wecare_nfe_exac.df, common_wecare_nfe_genotyp
 ##  $ Protein_position  : Factor w/ 7360 levels &quot;?-1&quot;,&quot;?-116&quot;,..: NA 540 646 2120 5818 6539 6508 6489 6430 6187 ...
 ##  $ Amino_acids       : Factor w/ 1851 levels &quot;-/*&quot;,&quot;-/*APX&quot;,..: NA 1100 1329 634 403 434 309 1351 1583 883 ...
 ##  $ Existing_variation: Factor w/ 309385 levels &quot;&quot;,&quot;FANCA:c.2534T&gt;C&quot;,..: 256505 163547 278564 231024 180934 285506 61109 256509 180450 156256 ...
-##  $ Multiallelic      : logi  FALSE FALSE FALSE FALSE FALSE FALSE ...
-##  $ ac_wecare_nfe_cln : int  5 4 1 44 1 1 4 1 1 837 ...
-##  $ an_wecare_nfe_cln : num  1088 1128 1106 1114 1168 ...
-##  $ af_wecare_nfe_cln : num  0.004596 0.003546 0.000904 0.039497 0.000856 ...</code></pre>
+##  $ Multiallelic      : logi  FALSE FALSE FALSE FALSE FALSE FALSE ...</code></pre>
 <pre class="r"><code>wecare_nfe_variants.df[1:5, 1:5]</code></pre>
 <pre><code>##                SplitVarID    SYMBOL  TYPE CHROM    POS
 ## Var000000002 Var000000002 LINC00115   SNP     1 762330
@@ -196,15 +191,16 @@ rm(common_wecare_nfe_eigen, common_wecare_nfe_exac.df, common_wecare_nfe_genotyp
 ## Var000000012 Var000000012    SAMD11 INDEL     1 874778
 ## Var000000013 Var000000013    SAMD11   SNP     1 878664</code></pre>
 <pre class="r"><code>dim(wecare_nfe_phenotypes.df)</code></pre>
-<pre><code>## [1] 678  28</code></pre>
+<pre><code>## [1] 678  29</code></pre>
 <pre class="r"><code>str(wecare_nfe_phenotypes.df)</code></pre>
-<pre><code>## 'data.frame':    678 obs. of  28 variables:
+<pre><code>## 'data.frame':    678 obs. of  29 variables:
 ##  $ wes_id        : chr  &quot;HG00097&quot; &quot;HG00099&quot; &quot;HG00100&quot; &quot;HG00102&quot; ...
 ##  $ gwas_id       : chr  NA NA NA NA ...
 ##  $ merged_id     : chr  NA NA NA NA ...
 ##  $ filter        : chr  &quot;pass&quot; &quot;pass&quot; &quot;pass&quot; &quot;pass&quot; ...
 ##  $ cc            : num  -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 ...
 ##  $ setno         : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ registry      : chr  NA NA NA NA ...
 ##  $ family_history: int  NA NA NA NA NA NA NA NA NA NA ...
 ##  $ age_dx        : int  NA NA NA NA NA NA NA NA NA NA ...
 ##  $ age_ref       : num  NA NA NA NA NA NA NA NA NA NA ...
@@ -319,7 +315,7 @@ rm(common_wecare_nfe_eigen, common_wecare_nfe_exac.df, common_wecare_nfe_genotyp
 ## Var000000009               NA                      NA
 ## Var000000012               NA                      NA
 ## Var000000013           106198                      17</code></pre>
-<pre class="r"><code>str(wecare_nfe_eigen)</code></pre>
+<pre class="r"><code>str(wecare_nfe.eigen)</code></pre>
 <pre><code>## List of 2
 ##  $ values : num [1:678] 3.7 3.16 3.15 3.02 2.79 ...
 ##  $ vectors: num [1:678, 1:678] 0.01245 0.01007 0.00953 0.01215 0.00997 ...</code></pre>
@@ -336,10 +332,10 @@ sum(rownames(wecare_nfe_genotypes.mx) != rownames(wecare_nfe_variants.df))</code
 <div id="add_wes_eigenvectors_to_phenotypes_table" class="section level1">
 <h1>add_wes_eigenvectors_to_phenotypes_table</h1>
 <pre class="r"><code>wecare_nfe_phenotypes_cols &lt;- colnames(wecare_nfe_phenotypes.df)
-wecare_nfe_phenotypes.df &lt;- cbind(wecare_nfe_phenotypes.df, wecare_nfe_eigen$vectors[,1:3])
+wecare_nfe_phenotypes.df &lt;- cbind(wecare_nfe_phenotypes.df, wecare_nfe.eigen$vectors[,1:3])
 colnames(wecare_nfe_phenotypes.df) &lt;- c(wecare_nfe_phenotypes_cols, &quot;eig1_wes&quot;, &quot;eig2_wes&quot;, &quot;eig3_wes&quot;)
 
-rm(wecare_nfe_phenotypes_cols, wecare_nfe_eigen)</code></pre>
+rm(wecare_nfe_phenotypes_cols, wecare_nfe.eigen)</code></pre>
 </div>
 <div id="remove_wes_eigenvectors_outliers" class="section level1">
 <h1>remove_wes_eigenvectors_outliers</h1>
@@ -391,7 +387,7 @@ dim(wecare_nfe_genotypes.mx) # 271438    672</code></pre>
 ## Var000000013       0       0      NA       0       0</code></pre>
 <pre class="r"><code>wecare_nfe_variants.df &lt;- wecare_nfe_variants.df[!uniform_genotypes,]
 dim(wecare_nfe_variants.df) # 271438     26</code></pre>
-<pre><code>## [1] 271438     26</code></pre>
+<pre><code>## [1] 271438     23</code></pre>
 <pre class="r"><code>wecare_nfe_variants.df[1:5,1:5]</code></pre>
 <pre><code>##                SplitVarID    SYMBOL  TYPE CHROM    POS
 ## Var000000002 Var000000002 LINC00115   SNP     1 762330
@@ -428,50 +424,6 @@ dim(wecare_nfe_exac.df) # 271438     48</code></pre>
 <pre class="r"><code># Clean-up
 rm(non_NA_count.udf, all_NA, uniform_vector.udf, uniform_genotypes)</code></pre>
 </div>
-<div id="recalculate_afs" class="section level1">
-<h1>recalculate_AFs</h1>
-<pre class="r"><code># Calculate ac, an and af
-ac_wecare &lt;- apply(wecare_nfe_genotypes.mx, 1, sum, na.rm=TRUE)
-get_allele_number.udf &lt;- function(x){2*sum(!is.na(x))}
-an_wecare &lt;- apply(wecare_nfe_genotypes.mx, 1, get_allele_number.udf)
-af_wecare &lt;- ac_wecare/an_wecare
-
-# Ceck AFs 
-# (note that uniform variants were excluded)
-ac_wecare[1:10]</code></pre>
-<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
-##            5            3            1           44            1 
-## Var000000020 Var000000021 Var000000022 Var000000023 Var000000024 
-##            1            4            1            1          829</code></pre>
-<pre class="r"><code>an_wecare[1:10]</code></pre>
-<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
-##         1076         1118         1096         1104         1158 
-## Var000000020 Var000000021 Var000000022 Var000000023 Var000000024 
-##         1228         1236         1234         1228         1276</code></pre>
-<pre class="r"><code>af_wecare[1:10]</code></pre>
-<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
-## 0.0046468401 0.0026833631 0.0009124088 0.0398550725 0.0008635579 
-## Var000000020 Var000000021 Var000000022 Var000000023 Var000000024 
-## 0.0008143322 0.0032362460 0.0008103728 0.0008143322 0.6496865204</code></pre>
-<pre class="r"><code>min(ac_wecare)</code></pre>
-<pre><code>## [1] 1</code></pre>
-<pre class="r"><code>min(an_wecare)</code></pre>
-<pre><code>## [1] 1060</code></pre>
-<pre class="r"><code>min(af_wecare)</code></pre>
-<pre><code>## [1] 0.0007440476</code></pre>
-<pre class="r"><code>max(ac_wecare)</code></pre>
-<pre><code>## [1] 1343</code></pre>
-<pre class="r"><code>max(an_wecare)</code></pre>
-<pre><code>## [1] 1344</code></pre>
-<pre class="r"><code>max(af_wecare)</code></pre>
-<pre><code>## [1] 0.999256</code></pre>
-<pre class="r"><code># Update ac, an and af in wecare_nfe_variants.df
-wecare_nfe_variants.df$ac_wecare_nfe_cln &lt;- ac_wecare
-wecare_nfe_variants.df$an_wecare_nfe_cln &lt;- an_wecare
-wecare_nfe_variants.df$af_wecare_nfe_cln &lt;- af_wecare
-
-rm(get_allele_number.udf, ac_wecare, an_wecare, af_wecare)</code></pre>
-</div>
 <div id="explore_remaining_cases" class="section level1">
 <h1>explore_remaining_cases</h1>
 <p>232 CBC, 242 UBC, 198 NFE</p>
@@ -479,6 +431,352 @@ rm(get_allele_number.udf, ac_wecare, an_wecare, af_wecare)</code></pre>
 summary(as.factor(wecare_nfe_phenotypes.df$cc))</code></pre>
 <pre><code>##  -1   0   1 
 ## 198 242 232</code></pre>
+</div>
+<div id="calculate_total_afs" class="section level1">
+<h1>calculate_total_AFs</h1>
+<pre class="r"><code># Function to count alleles (2x for diploid)
+get_allele_number.udf &lt;- function(x){2*sum(!is.na(x))}
+
+# Check genotypes table
+dim(wecare_nfe_genotypes.mx)</code></pre>
+<pre><code>## [1] 271438    672</code></pre>
+<pre class="r"><code># Calculate ac, an and af
+ac_wecare_nfe_cln &lt;- apply(wecare_nfe_genotypes.mx, 1, sum, na.rm=TRUE)
+an_wecare_nfe_cln &lt;- apply(wecare_nfe_genotypes.mx, 1, get_allele_number.udf)
+af_wecare_nfe_cln &lt;- ac_wecare_nfe_cln/an_wecare_nfe_cln
+
+# Ceck AFs 
+# (note that uniform variants were excluded)
+ac_wecare_nfe_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##            5            3            1           44            1 
+## Var000000020 
+##            1</code></pre>
+<pre class="r"><code>an_wecare_nfe_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##         1076         1118         1096         1104         1158 
+## Var000000020 
+##         1228</code></pre>
+<pre class="r"><code>af_wecare_nfe_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+## 0.0046468401 0.0026833631 0.0009124088 0.0398550725 0.0008635579 
+## Var000000020 
+## 0.0008143322</code></pre>
+<pre class="r"><code>min(ac_wecare_nfe_cln)</code></pre>
+<pre><code>## [1] 1</code></pre>
+<pre class="r"><code>min(an_wecare_nfe_cln)</code></pre>
+<pre><code>## [1] 1060</code></pre>
+<pre class="r"><code>min(af_wecare_nfe_cln)</code></pre>
+<pre><code>## [1] 0.0007440476</code></pre>
+<pre class="r"><code>max(ac_wecare_nfe_cln)</code></pre>
+<pre><code>## [1] 1343</code></pre>
+<pre class="r"><code>max(an_wecare_nfe_cln)</code></pre>
+<pre><code>## [1] 1344</code></pre>
+<pre class="r"><code>max(af_wecare_nfe_cln)</code></pre>
+<pre><code>## [1] 0.999256</code></pre>
+<pre class="r"><code># Add updated AFs to wecare_nfe_variants.df
+wecare_nfe_variants.df &lt;- cbind(wecare_nfe_variants.df, 
+  ac_wecare_nfe_cln, an_wecare_nfe_cln, af_wecare_nfe_cln)
+
+# Clean-up
+rm(ac_wecare_nfe_cln, an_wecare_nfe_cln, af_wecare_nfe_cln)</code></pre>
+</div>
+<div id="calculate_nfe_afs" class="section level1">
+<h1>calculate_nfe_AFs</h1>
+<pre class="r"><code># Prepare genotypes table
+nfe_cases &lt;- wecare_nfe_phenotypes.df$cc == -1 
+sum(nfe_cases) # 198</code></pre>
+<pre><code>## [1] 198</code></pre>
+<pre class="r"><code>nfe_genotypes.mx &lt;- wecare_nfe_genotypes.mx[,nfe_cases]
+dim(nfe_genotypes.mx)</code></pre>
+<pre><code>## [1] 271438    198</code></pre>
+<pre class="r"><code># Calculate nfe ac, an and af
+ac_nfe_cln &lt;- apply(nfe_genotypes.mx, 1, sum, na.rm=TRUE)
+an_nfe_cln &lt;- apply(nfe_genotypes.mx, 1, get_allele_number.udf)
+af_nfe_cln &lt;- ac_nfe_cln/an_nfe_cln
+
+# Ceck AFs 
+ac_nfe_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##            1            1            0            7            0 
+## Var000000020 
+##            0</code></pre>
+<pre class="r"><code>an_nfe_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##          138          294          300          338          348 
+## Var000000020 
+##          284</code></pre>
+<pre class="r"><code>af_nfe_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##  0.007246377  0.003401361  0.000000000  0.020710059  0.000000000 
+## Var000000020 
+##  0.000000000</code></pre>
+<pre class="r"><code># Add updated AFs to wecare_nfe_variants.df
+wecare_nfe_variants.df &lt;- cbind(wecare_nfe_variants.df, 
+  ac_nfe_cln, an_nfe_cln, af_nfe_cln)
+
+# Clean-up
+rm(nfe_cases, nfe_genotypes.mx, ac_nfe_cln, an_nfe_cln, af_nfe_cln)</code></pre>
+</div>
+<div id="calculate_wecare_afs" class="section level1">
+<h1>calculate_wecare_AFs</h1>
+<pre class="r"><code># Prepare genotypes table
+wecare_cases &lt;- wecare_nfe_phenotypes.df$cc == 0 | wecare_nfe_phenotypes.df$cc == 1
+sum(wecare_cases) # 474</code></pre>
+<pre><code>## [1] 474</code></pre>
+<pre class="r"><code>wecare_genotypes.mx &lt;- wecare_nfe_genotypes.mx[,wecare_cases]
+dim(wecare_genotypes.mx)</code></pre>
+<pre><code>## [1] 271438    474</code></pre>
+<pre class="r"><code># Calculate nfe ac, an and af
+ac_wecare_cln &lt;- apply(wecare_genotypes.mx, 1, sum, na.rm=TRUE)
+an_wecare_cln &lt;- apply(wecare_genotypes.mx, 1, get_allele_number.udf)
+af_wecare_cln &lt;- ac_wecare_cln/an_wecare_cln
+
+# Ceck AFs 
+ac_wecare_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##            4            2            1           37            1 
+## Var000000020 
+##            1</code></pre>
+<pre class="r"><code>an_wecare_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##          938          824          796          766          810 
+## Var000000020 
+##          944</code></pre>
+<pre class="r"><code>af_wecare_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##  0.004264392  0.002427184  0.001256281  0.048302872  0.001234568 
+## Var000000020 
+##  0.001059322</code></pre>
+<pre class="r"><code># Add updated AFs to wecare_nfe_variants.df
+wecare_nfe_variants.df &lt;- cbind(wecare_nfe_variants.df, 
+  ac_wecare_cln, an_wecare_cln, af_wecare_cln)
+
+# Clean-up
+rm(wecare_cases, wecare_genotypes.mx, ac_wecare_cln, an_wecare_cln, af_wecare_cln)</code></pre>
+</div>
+<div id="calculate_ubc_afs" class="section level1">
+<h1>calculate_ubc_AFs</h1>
+<pre class="r"><code># Prepare genotypes table
+ubc_cases &lt;- wecare_nfe_phenotypes.df$cc == 0 
+sum(ubc_cases) # 242</code></pre>
+<pre><code>## [1] 242</code></pre>
+<pre class="r"><code>ubc_genotypes.mx &lt;- wecare_nfe_genotypes.mx[,ubc_cases]
+dim(ubc_genotypes.mx)</code></pre>
+<pre><code>## [1] 271438    242</code></pre>
+<pre class="r"><code># Calculate ubc ac, an and af
+ac_ubc_cln &lt;- apply(ubc_genotypes.mx, 1, sum, na.rm=TRUE)
+an_ubc_cln &lt;- apply(ubc_genotypes.mx, 1, get_allele_number.udf)
+af_ubc_cln &lt;- ac_ubc_cln/an_ubc_cln
+
+# Ceck AFs 
+ac_ubc_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##            2            1            1           20            1 
+## Var000000020 
+##            1</code></pre>
+<pre class="r"><code>an_ubc_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##          482          428          416          402          416 
+## Var000000020 
+##          484</code></pre>
+<pre class="r"><code>af_ubc_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##  0.004149378  0.002336449  0.002403846  0.049751244  0.002403846 
+## Var000000020 
+##  0.002066116</code></pre>
+<pre class="r"><code># Add updated AFs to wecare_nfe_variants.df
+wecare_nfe_variants.df &lt;- cbind(wecare_nfe_variants.df, 
+  ac_ubc_cln, an_ubc_cln, af_ubc_cln)
+
+# Clean-up
+rm(ubc_cases, ubc_genotypes.mx, ac_ubc_cln, an_ubc_cln, af_ubc_cln)</code></pre>
+</div>
+<div id="calculate_cbc_afs" class="section level1">
+<h1>calculate_cbc_AFs</h1>
+<pre class="r"><code># Prepare genotypes table
+cbc_cases &lt;- wecare_nfe_phenotypes.df$cc == 1 
+sum(cbc_cases) # 232</code></pre>
+<pre><code>## [1] 232</code></pre>
+<pre class="r"><code>cbc_genotypes.mx &lt;- wecare_nfe_genotypes.mx[,cbc_cases]
+dim(cbc_genotypes.mx)</code></pre>
+<pre><code>## [1] 271438    232</code></pre>
+<pre class="r"><code># Calculate cbc ac, an and af
+ac_cbc_cln &lt;- apply(cbc_genotypes.mx, 1, sum, na.rm=TRUE)
+an_cbc_cln &lt;- apply(cbc_genotypes.mx, 1, get_allele_number.udf)
+af_cbc_cln &lt;- ac_cbc_cln/an_cbc_cln
+
+# Ceck AFs 
+ac_cbc_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##            2            1            0           17            0 
+## Var000000020 
+##            0</code></pre>
+<pre class="r"><code>an_cbc_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##          456          396          380          364          394 
+## Var000000020 
+##          460</code></pre>
+<pre class="r"><code>af_cbc_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##  0.004385965  0.002525253  0.000000000  0.046703297  0.000000000 
+## Var000000020 
+##  0.000000000</code></pre>
+<pre class="r"><code># Add updated AFs to wecare_nfe_variants.df
+wecare_nfe_variants.df &lt;- cbind(wecare_nfe_variants.df, 
+  ac_cbc_cln, an_cbc_cln, af_cbc_cln)
+
+# Clean-up
+rm(cbc_cases, cbc_genotypes.mx, ac_cbc_cln, an_cbc_cln, af_cbc_cln)</code></pre>
+</div>
+<div id="calculate_ubc_fam_afs" class="section level1">
+<h1>calculate_ubc_fam_AFs</h1>
+<pre class="r"><code># Prepare genotypes table
+ubc_fam_cases &lt;- wecare_nfe_phenotypes.df$cc == 0 &amp; wecare_nfe_phenotypes.df$family_history == 1
+sum(ubc_fam_cases) # 70</code></pre>
+<pre><code>## [1] 70</code></pre>
+<pre class="r"><code>ubc_fam_genotypes.mx &lt;- wecare_nfe_genotypes.mx[,ubc_fam_cases]
+dim(ubc_fam_genotypes.mx)</code></pre>
+<pre><code>## [1] 271438     70</code></pre>
+<pre class="r"><code># Calculate ubc_fam ac, an and af
+ac_ubc_fam_cln &lt;- apply(ubc_fam_genotypes.mx, 1, sum, na.rm=TRUE)
+an_ubc_fam_cln &lt;- apply(ubc_fam_genotypes.mx, 1, get_allele_number.udf)
+af_ubc_fam_cln &lt;- ac_ubc_fam_cln/an_ubc_fam_cln
+
+# Ceck AFs 
+ac_ubc_fam_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##            2            1            1            3            0 
+## Var000000020 
+##            0</code></pre>
+<pre class="r"><code>an_ubc_fam_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##          140          124          120          112          114 
+## Var000000020 
+##          140</code></pre>
+<pre class="r"><code>af_ubc_fam_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##  0.014285714  0.008064516  0.008333333  0.026785714  0.000000000 
+## Var000000020 
+##  0.000000000</code></pre>
+<pre class="r"><code># Add updated AFs to wecare_nfe_variants.df
+wecare_nfe_variants.df &lt;- cbind(wecare_nfe_variants.df, 
+  ac_ubc_fam_cln, an_ubc_fam_cln, af_ubc_fam_cln)
+
+# Clean-up
+rm(ubc_fam_cases, ubc_fam_genotypes.mx, ac_ubc_fam_cln, an_ubc_fam_cln, af_ubc_fam_cln)</code></pre>
+</div>
+<div id="calculate_ubc_nofam_afs" class="section level1">
+<h1>calculate_ubc_nofam_AFs</h1>
+<pre class="r"><code># Prepare genotypes table
+ubc_nofam_cases &lt;- wecare_nfe_phenotypes.df$cc == 0 &amp; wecare_nfe_phenotypes.df$family_history == 0
+sum(ubc_nofam_cases) # 172</code></pre>
+<pre><code>## [1] 172</code></pre>
+<pre class="r"><code>ubc_nofam_genotypes.mx &lt;- wecare_nfe_genotypes.mx[,ubc_nofam_cases]
+dim(ubc_nofam_genotypes.mx)</code></pre>
+<pre><code>## [1] 271438    172</code></pre>
+<pre class="r"><code># Calculate ubc_nofam ac, an and af
+ac_ubc_nofam_cln &lt;- apply(ubc_nofam_genotypes.mx, 1, sum, na.rm=TRUE)
+an_ubc_nofam_cln &lt;- apply(ubc_nofam_genotypes.mx, 1, get_allele_number.udf)
+af_ubc_nofam_cln &lt;- ac_ubc_nofam_cln/an_ubc_nofam_cln
+
+# Ceck AFs 
+ac_ubc_nofam_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##            0            0            0           17            1 
+## Var000000020 
+##            1</code></pre>
+<pre class="r"><code>an_ubc_nofam_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##          342          304          296          290          302 
+## Var000000020 
+##          344</code></pre>
+<pre class="r"><code>af_ubc_nofam_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##  0.000000000  0.000000000  0.000000000  0.058620690  0.003311258 
+## Var000000020 
+##  0.002906977</code></pre>
+<pre class="r"><code># Add updated AFs to wecare_nfe_variants.df
+wecare_nfe_variants.df &lt;- cbind(wecare_nfe_variants.df, 
+  ac_ubc_nofam_cln, an_ubc_nofam_cln, af_ubc_nofam_cln)
+
+# Clean-up
+rm(ubc_nofam_cases, ubc_nofam_genotypes.mx, ac_ubc_nofam_cln, an_ubc_nofam_cln, af_ubc_nofam_cln)</code></pre>
+</div>
+<div id="calculate_cbc_fam_afs" class="section level1">
+<h1>calculate_cbc_fam_AFs</h1>
+<pre class="r"><code># Prepare genotypes table
+cbc_fam_cases &lt;- wecare_nfe_phenotypes.df$cc == 1 &amp; wecare_nfe_phenotypes.df$family_history == 1
+sum(cbc_fam_cases) # 82</code></pre>
+<pre><code>## [1] 82</code></pre>
+<pre class="r"><code>cbc_fam_genotypes.mx &lt;- wecare_nfe_genotypes.mx[,cbc_fam_cases]
+dim(cbc_fam_genotypes.mx)</code></pre>
+<pre><code>## [1] 271438     82</code></pre>
+<pre class="r"><code># Calculate cbc_fam ac, an and af
+ac_cbc_fam_cln &lt;- apply(cbc_fam_genotypes.mx, 1, sum, na.rm=TRUE)
+an_cbc_fam_cln &lt;- apply(cbc_fam_genotypes.mx, 1, get_allele_number.udf)
+af_cbc_fam_cln &lt;- ac_cbc_fam_cln/an_cbc_fam_cln
+
+# Ceck AFs 
+ac_cbc_fam_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##            1            0            0            4            0 
+## Var000000020 
+##            0</code></pre>
+<pre class="r"><code>an_cbc_fam_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##          162          132          128          116          140 
+## Var000000020 
+##          162</code></pre>
+<pre class="r"><code>af_cbc_fam_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##   0.00617284   0.00000000   0.00000000   0.03448276   0.00000000 
+## Var000000020 
+##   0.00000000</code></pre>
+<pre class="r"><code># Add updated AFs to wecare_nfe_variants.df
+wecare_nfe_variants.df &lt;- cbind(wecare_nfe_variants.df, 
+  ac_cbc_fam_cln, an_cbc_fam_cln, af_cbc_fam_cln)
+
+# Clean-up
+rm(cbc_fam_cases, cbc_fam_genotypes.mx, ac_cbc_fam_cln, an_cbc_fam_cln, af_cbc_fam_cln)</code></pre>
+</div>
+<div id="calculate_cbc_nofam_afs" class="section level1">
+<h1>calculate_cbc_nofam_AFs</h1>
+<pre class="r"><code># Prepare genotypes table
+cbc_nofam_cases &lt;- wecare_nfe_phenotypes.df$cc == 1 &amp; wecare_nfe_phenotypes.df$family_history == 0
+sum(cbc_nofam_cases) # 150</code></pre>
+<pre><code>## [1] 150</code></pre>
+<pre class="r"><code>cbc_nofam_genotypes.mx &lt;- wecare_nfe_genotypes.mx[,cbc_nofam_cases]
+dim(cbc_nofam_genotypes.mx)</code></pre>
+<pre><code>## [1] 271438    150</code></pre>
+<pre class="r"><code># Calculate cbc_nofam ac, an and af
+ac_cbc_nofam_cln &lt;- apply(cbc_nofam_genotypes.mx, 1, sum, na.rm=TRUE)
+an_cbc_nofam_cln &lt;- apply(cbc_nofam_genotypes.mx, 1, get_allele_number.udf)
+af_cbc_nofam_cln &lt;- ac_cbc_nofam_cln/an_cbc_nofam_cln
+
+# Ceck AFs 
+ac_cbc_nofam_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##            1            1            0           13            0 
+## Var000000020 
+##            0</code></pre>
+<pre class="r"><code>an_cbc_nofam_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##          294          264          252          248          254 
+## Var000000020 
+##          298</code></pre>
+<pre class="r"><code>af_cbc_nofam_cln[1:6]</code></pre>
+<pre><code>## Var000000002 Var000000008 Var000000009 Var000000012 Var000000013 
+##  0.003401361  0.003787879  0.000000000  0.052419355  0.000000000 
+## Var000000020 
+##  0.000000000</code></pre>
+<pre class="r"><code># Add updated AFs to wecare_nfe_variants.df
+wecare_nfe_variants.df &lt;- cbind(wecare_nfe_variants.df, 
+  ac_cbc_nofam_cln, an_cbc_nofam_cln, af_cbc_nofam_cln)
+
+# Clean-up
+rm(cbc_nofam_cases, cbc_nofam_genotypes.mx, ac_cbc_nofam_cln, 
+   an_cbc_nofam_cln, af_cbc_nofam_cln, get_allele_number.udf)</code></pre>
 </div>
 <div id="data_summary" class="section level1">
 <h1>data_summary</h1>
@@ -499,15 +797,16 @@ summary(as.factor(wecare_nfe_phenotypes.df$cc))</code></pre>
 ## Var000000012       0       0      NA       0       0
 ## Var000000013       0       0      NA       0       0</code></pre>
 <pre class="r"><code>dim(wecare_nfe_phenotypes.df)</code></pre>
-<pre><code>## [1] 672  31</code></pre>
+<pre><code>## [1] 672  32</code></pre>
 <pre class="r"><code>str(wecare_nfe_phenotypes.df)</code></pre>
-<pre><code>## 'data.frame':    672 obs. of  31 variables:
+<pre><code>## 'data.frame':    672 obs. of  32 variables:
 ##  $ wes_id        : chr  &quot;HG00097&quot; &quot;HG00099&quot; &quot;HG00100&quot; &quot;HG00102&quot; ...
 ##  $ gwas_id       : chr  NA NA NA NA ...
 ##  $ merged_id     : chr  NA NA NA NA ...
 ##  $ filter        : chr  &quot;pass&quot; &quot;pass&quot; &quot;pass&quot; &quot;pass&quot; ...
 ##  $ cc            : num  -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 ...
 ##  $ setno         : int  NA NA NA NA NA NA NA NA NA NA ...
+##  $ registry      : chr  NA NA NA NA ...
 ##  $ family_history: int  NA NA NA NA NA NA NA NA NA NA ...
 ##  $ age_dx        : int  NA NA NA NA NA NA NA NA NA NA ...
 ##  $ age_ref       : num  NA NA NA NA NA NA NA NA NA NA ...
@@ -541,7 +840,7 @@ summary(as.factor(wecare_nfe_phenotypes.df$cc))</code></pre>
 ## HG00102 HG00102    &lt;NA&gt;      &lt;NA&gt;   pass -1
 ## HG00106 HG00106    &lt;NA&gt;      &lt;NA&gt;   pass -1</code></pre>
 <pre class="r"><code>dim(wecare_nfe_variants.df)</code></pre>
-<pre><code>## [1] 271438     26</code></pre>
+<pre><code>## [1] 271438     50</code></pre>
 <pre class="r"><code>colnames(wecare_nfe_variants.df)</code></pre>
 <pre><code>##  [1] &quot;SplitVarID&quot;         &quot;SYMBOL&quot;             &quot;TYPE&quot;              
 ##  [4] &quot;CHROM&quot;              &quot;POS&quot;                &quot;REF&quot;               
@@ -551,7 +850,15 @@ summary(as.factor(wecare_nfe_phenotypes.df$cc))</code></pre>
 ## [16] &quot;CLIN_SIG&quot;           &quot;cDNA_position&quot;      &quot;CDS_position&quot;      
 ## [19] &quot;Codons&quot;             &quot;Protein_position&quot;   &quot;Amino_acids&quot;       
 ## [22] &quot;Existing_variation&quot; &quot;Multiallelic&quot;       &quot;ac_wecare_nfe_cln&quot; 
-## [25] &quot;an_wecare_nfe_cln&quot;  &quot;af_wecare_nfe_cln&quot;</code></pre>
+## [25] &quot;an_wecare_nfe_cln&quot;  &quot;af_wecare_nfe_cln&quot;  &quot;ac_nfe_cln&quot;        
+## [28] &quot;an_nfe_cln&quot;         &quot;af_nfe_cln&quot;         &quot;ac_wecare_cln&quot;     
+## [31] &quot;an_wecare_cln&quot;      &quot;af_wecare_cln&quot;      &quot;ac_ubc_cln&quot;        
+## [34] &quot;an_ubc_cln&quot;         &quot;af_ubc_cln&quot;         &quot;ac_cbc_cln&quot;        
+## [37] &quot;an_cbc_cln&quot;         &quot;af_cbc_cln&quot;         &quot;ac_ubc_fam_cln&quot;    
+## [40] &quot;an_ubc_fam_cln&quot;     &quot;af_ubc_fam_cln&quot;     &quot;ac_ubc_nofam_cln&quot;  
+## [43] &quot;an_ubc_nofam_cln&quot;   &quot;af_ubc_nofam_cln&quot;   &quot;ac_cbc_fam_cln&quot;    
+## [46] &quot;an_cbc_fam_cln&quot;     &quot;af_cbc_fam_cln&quot;     &quot;ac_cbc_nofam_cln&quot;  
+## [49] &quot;an_cbc_nofam_cln&quot;   &quot;af_cbc_nofam_cln&quot;</code></pre>
 <pre class="r"><code>wecare_nfe_variants.df[1:5,1:5]</code></pre>
 <pre><code>##                SplitVarID    SYMBOL  TYPE CHROM    POS
 ## Var000000002 Var000000002 LINC00115   SNP     1 762330
@@ -654,7 +961,7 @@ summary(as.factor(wecare_nfe_phenotypes.df$cc))</code></pre>
 ##  [5] yaml_2.1.13     Rcpp_0.12.6     stringi_1.1.1   rmarkdown_1.0  
 ##  [9] knitr_1.13      stringr_1.0.0   digest_0.6.10   evaluate_0.9</code></pre>
 <pre class="r"><code>Sys.time()</code></pre>
-<pre><code>## [1] &quot;2017-02-24 19:44:04 GMT&quot;</code></pre>
+<pre><code>## [1] &quot;2017-03-01 22:15:55 GMT&quot;</code></pre>
 </div>
 
 

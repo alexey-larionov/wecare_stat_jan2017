@@ -4,7 +4,7 @@ output: html_document
 ---
 
 started: Alexey Larionov, 01Mar2016  
-last updated: Alexey Larionov, 26Jan2017
+last updated: Alexey Larionov, 28Feb2017
 
 # Summary
 
@@ -234,6 +234,7 @@ demographics.df <- demographics.df %>% select(
   labid = labid.x,
   cc = cc.x,
   setno = setno.x,
+  registry = registry.y,
   family_history = family_history.y,
   sub_dx_age = sub_dx_age.x,
   refage = refage,
@@ -302,6 +303,7 @@ pheno.df <- pheno.df %>%
     gwas_id = labid, 
     cc = cc.x, 
     setno = setno.x,
+    registry = registry,
     family_history = family_history,
     age_dx = sub_dx_age.x, 
     age_ref = refage, 
@@ -1068,7 +1070,7 @@ Encoding:
 
 ```{r add_nfe_to_phenotypes_table}
 
-nfe_phenotypes.df <- as.data.frame(matrix(rep(NA,198*28), nrow=198))
+nfe_phenotypes.df <- as.data.frame(matrix(rep(NA,198*29), nrow=198))
 colnames(nfe_phenotypes.df) <- colnames(phenotypes.df)
 
 nfe_ids <- colnames(gt.mx)[1:198]

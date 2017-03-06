@@ -8,7 +8,8 @@ last updated: Alexey Larionov, 24Feb2017
 
 # Summary
 
-### Exploring removal of common (AF>5-10%) variants
+### Exploring removal of common variants (AF>5-10%) 
+### on genes with multiple protein-affecting variants
 Modest effect. Slightly playes down MUC4 etc. 
 
 ###Exploring BRCA1, BRCA2, PALB2 carriers

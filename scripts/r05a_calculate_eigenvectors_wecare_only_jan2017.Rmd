@@ -4,7 +4,7 @@ output: html_document
 ---
 
 started: Alexey Larionov, 2016  
-last updated: Alexey Larionov, 09Feb2017
+last updated: Alexey Larionov, 01Mar2017
 
 # Summary
 
@@ -14,7 +14,8 @@ Overall, eigenvectors are calculated for 3 datasets:
 - wecare-nfe (all variants and common variants)  
 - wecare-nfe-50kgen (overlapped-variants and overlapped-common-variants)  
 
-This script deals with wecare-only dataset.  Additionally it exports data to text files to repeat wecare-only calculations in eigenstrat. 
+This script deals with wecare-only dataset.  
+Additionally it exports wecare-only data to text files in eigenstrat format. 
 
 # start_section
 
@@ -175,16 +176,24 @@ rm(non_NA_count.udf, all_NA, uniform_vector.udf, uniform_genotypes)
 
 ```
 
-# calculate_and_plot_eigenvectors_wecare_all_variants
+# remove_wecare_nfe_tables
 
-```{r calculate_and_plot_eigenvectors_wecare_all_variants}
+```{r remove_wecare_nfe_tables}
+
+rm(wecare_nfe_exac.df, wecare_nfe_kgen.df, wecare_nfe_variants.df, wecare_nfe_genotypes.mx, wecare_nfe_phenotypes.df)
+
+```
+
+# calculate_and_plot_eigenvectors
+
+```{r calculate_and_plot_eigenvectors}
 
 # --- Calculate eigenvectors --- #
 
-wecare_eigen <- normalise_and_calculate_eigenvectors.udf(wecare_genotypes.mx)
+wecare.eigen <- normalise_and_calculate_eigenvectors.udf(wecare_genotypes.mx)
 
-wecare_all_variants_eigenvectors.mx.df <- as.data.frame(wecare_eigen$vectors) # eigenvectors in columns
-wecare_all_variants_eigenvalues <- wecare_eigen$values
+wecare.eigenvectors.df <- as.data.frame(wecare.eigen$vectors) # eigenvectors in columns
+wecare.eigenvalues <- wecare.eigen$values
 
 # --- Prepare data for plotting --- #
 
@@ -201,7 +210,7 @@ cases_labels <- as.vector(wecare_phenotypes.df$cc)
 cases_IDs <- as.vector(wecare_phenotypes.df$wes_id)
 
 # make the dataframe
-data2plot.df <- cbind(cases_IDs, cases_labels, wecare_all_variants_eigenvectors.mx.df[,1:3])
+data2plot.df <- cbind(cases_IDs, cases_labels, wecare.eigenvectors.df[,1:3])
 colnames(data2plot.df) <- c("wes_id", "group", "ev1", "ev2", "ev3")
 
 # --- Plot eig1 vs eig2 --- #
@@ -224,19 +233,21 @@ ggplotly(g)
 
 # --- Clean-up --- #
 
-rm(wecare_all_variants_eigenvalues, g, data2plot.df)
+rm(wecare.eigenvectors.df, wecare.eigenvalues, g, data2plot.df, 
+   cases_IDs, cases_labels, colours, userColourScale, 
+   normalise_and_calculate_eigenvectors.udf)
 
 ```
 
-# calculate_outliers_all_variants
+# calculate_outliers
 
 Using 6 standard deviations in 5 eigenvectors
 
-```{r calculate_outliers_all_variants}
+```{r calculate_outliers}
 
-wecare_all_variants_eigenvectors.mx <- wecare_eigen$vectors
+wecare.eigenvectors.mx <- wecare.eigen$vectors
 
-ev1 <- wecare_all_variants_eigenvectors.mx[,1]
+ev1 <- wecare.eigenvectors.mx[,1]
 ev1.positive_outliers <- ev1 > mean(ev1) + 6 * sd(ev1)
 ev1.negative_outliers <- ev1 < mean(ev1) - 6 * sd(ev1)
 sum(ev1.positive_outliers)
@@ -245,7 +256,7 @@ sum(ev1.negative_outliers)
 wecare_phenotypes.df$wes_id[ev1.positive_outliers]
 wecare_phenotypes.df$wes_id[ev1.negative_outliers]
 
-ev2 <- wecare_all_variants_eigenvectors.mx[,2]
+ev2 <- wecare.eigenvectors.mx[,2]
 ev2.positive_outliers <- ev2 > mean(ev2) + 6 * sd(ev2)
 ev2.negative_outliers <- ev2 < mean(ev2) - 6 * sd(ev2)
 sum(ev2.positive_outliers)
@@ -254,7 +265,7 @@ sum(ev2.negative_outliers)
 wecare_phenotypes.df$wes_id[ev2.positive_outliers]
 wecare_phenotypes.df$wes_id[ev2.negative_outliers]
 
-ev3 <- wecare_all_variants_eigenvectors.mx[,3]
+ev3 <- wecare.eigenvectors.mx[,3]
 ev3.positive_outliers <- ev3 > mean(ev3) + 6 * sd(ev3)
 ev3.negative_outliers <- ev3 < mean(ev3) - 6 * sd(ev3)
 sum(ev3.positive_outliers)
@@ -263,7 +274,7 @@ sum(ev3.negative_outliers)
 wecare_phenotypes.df$wes_id[ev3.positive_outliers]
 wecare_phenotypes.df$wes_id[ev3.negative_outliers]
 
-ev4 <- wecare_all_variants_eigenvectors.mx[,4]
+ev4 <- wecare.eigenvectors.mx[,4]
 ev4.positive_outliers <- ev4 > mean(ev4) + 6 * sd(ev4)
 ev4.negative_outliers <- ev4 < mean(ev4) - 6 * sd(ev4)
 sum(ev4.positive_outliers)
@@ -272,7 +283,7 @@ sum(ev4.negative_outliers)
 wecare_phenotypes.df$wes_id[ev4.positive_outliers]
 wecare_phenotypes.df$wes_id[ev4.negative_outliers]
 
-ev5 <- wecare_all_variants_eigenvectors.mx[,5]
+ev5 <- wecare.eigenvectors.mx[,5]
 ev5.positive_outliers <- ev5 > mean(ev5) + 6 * sd(ev5)
 ev5.negative_outliers <- ev5 < mean(ev5) - 6 * sd(ev5)
 sum(ev5.positive_outliers)
@@ -282,54 +293,54 @@ wecare_phenotypes.df$wes_id[ev5.positive_outliers]
 wecare_phenotypes.df$wes_id[ev5.negative_outliers]
 
 # Clean-up
-rm(wecare_all_variants_eigenvectors.mx, ev1, ev1.positive_outliers, ev1.negative_outliers, 
+rm(wecare.eigenvectors.mx, ev1, ev1.positive_outliers, ev1.negative_outliers, 
    ev2, ev2.positive_outliers, ev2.negative_outliers, ev3, ev3.positive_outliers, ev3.negative_outliers,
    ev4, ev4.positive_outliers, ev4.negative_outliers, ev5, ev5.positive_outliers, ev5.negative_outliers)
 
 ```
 
-# export_wecare_all_variants_to_EIGENSTRAT_format
+# export_to_EIGENSTRAT_format
 
-```{r export_wecare_all_variants_to_EIGENSTRAT_format}
+```{r export_to_EIGENSTRAT_format}
 
 # --- make snp file --- #
 
 # Extract data from variants table
-wecare_all_variants_snp.df <- wecare_variants.df %>% 
+wecare_snp.df <- wecare_variants.df %>% 
   mutate(morgan = POS / 1000000) %>%  
   select(SplitVarID, CHROM, morgan, POS, REF, ALT)
 
 # Recode CRHOM data
-summary(wecare_all_variants_snp.df$CHROM)
+summary(wecare_snp.df$CHROM)
 
-str(wecare_all_variants_snp.df)
-wecare_all_variants_snp.df$CHROM <- as.vector(wecare_all_variants_snp.df$CHROM)
-str(wecare_all_variants_snp.df)
+str(wecare_snp.df)
+wecare_snp.df$CHROM <- as.vector(wecare_snp.df$CHROM)
+str(wecare_snp.df)
 
-"23" -> wecare_all_variants_snp.df[wecare_all_variants_snp.df$CHROM == "X", "CHROM"]
-"24" -> wecare_all_variants_snp.df[wecare_all_variants_snp.df$CHROM == "Y", "CHROM"]
-"90" -> wecare_all_variants_snp.df[wecare_all_variants_snp.df$CHROM == "MT", "CHROM"]
+"23" -> wecare_snp.df[wecare_snp.df$CHROM == "X", "CHROM"]
+"24" -> wecare_snp.df[wecare_snp.df$CHROM == "Y", "CHROM"]
+"90" -> wecare_snp.df[wecare_snp.df$CHROM == "MT", "CHROM"]
 
-wecare_all_variants_snp.df$CHROM <- as.factor(wecare_all_variants_snp.df$CHROM)
-summary(wecare_all_variants_snp.df$CHROM)
+wecare_snp.df$CHROM <- as.factor(wecare_snp.df$CHROM)
+summary(wecare_snp.df$CHROM)
 
 # Write file (tab-separated)
-write.table(wecare_all_variants_snp.df, 
-            paste(interim_data_folder, "wecare_all_variants.snp", sep="/"), 
+write.table(wecare_snp.df, 
+            paste(interim_data_folder, "wecare.snp", sep="/"), 
             quote=FALSE, sep="\t", 
             row.names=FALSE, col.names=FALSE) 
 
 # --- make geno file --- #
 
 # Get data from genotypes matrix
-wecare_all_variants_geno.mx <- wecare_genotypes.mx
+wecare_geno.mx <- wecare_genotypes.mx
 
 # Recode NA
-9 -> wecare_all_variants_geno.mx[is.na(wecare_all_variants_geno.mx)] # NA is coded as 9
+9 -> wecare_geno.mx[is.na(wecare_geno.mx)] # NA is coded as 9
 
 # Write file (no delimiters!)
-write.table(wecare_all_variants_geno.mx, 
-            paste(interim_data_folder, "wecare_all_variants.geno", sep="/"),             
+write.table(wecare_geno.mx, 
+            paste(interim_data_folder, "wecare.geno", sep="/"),             
             quote=FALSE, sep="", 
             row.names=FALSE, col.names=FALSE)
 
@@ -356,215 +367,7 @@ write.table(wecare_ind.mx,
             row.names=FALSE, col.names=FALSE)
 
 # Clean-up
-rm(wecare_all_variants_snp.df, wecare_all_variants_geno.mx, wecare_ind.mx, samples, gender, group)
-
-```
-
-# calculate_AFs
-
-```{r calculate_AFs}
-
-# Calculate ac, an and af
-
-ac_wecare_cln <- apply(wecare_genotypes.mx, 1, sum, na.rm=TRUE)
-get_allele_number.udf <- function(x){2*sum(!is.na(x))}
-an_wecare_cln <- apply(wecare_genotypes.mx, 1, get_allele_number.udf)
-af_wecare_cln <- ac_wecare_cln/an_wecare_cln
-
-# Ceck AFs 
-# (note that uniform variants were excluded)
-ac_wecare_cln[1:10]
-an_wecare_cln[1:10]
-af_wecare_cln[1:10]
-
-min(ac_wecare_cln)
-min(an_wecare_cln)
-min(af_wecare_cln)
-
-max(ac_wecare_cln)
-max(an_wecare_cln)
-max(af_wecare_cln)
-
-# Add updated AFs to wecare_variants.df
-wecare_variants.df <- cbind(wecare_variants.df, 
-  ac_wecare_cln, an_wecare_cln, af_wecare_cln)
-
-```
-
-# calculate_and_plot_eigenvectors_wecare_common_variants
-
-```{r calculate_and_plot_eigenvectors_wecare_common_variants}
-
-# --- Exclude rare variants --- #
-# Note exclusion on both sides: high- and low- AFs
-# Low AFs remove rare variants with common allele in reference genome
-# Hight AFs remove rare variants with common allele in reference genome
-
-wecare_common_vars <- af_wecare_cln > 0.05 & af_wecare_cln < 0.95
-sum(wecare_common_vars) # 44,517
-min(af_wecare_cln[wecare_common_vars])
-max(af_wecare_cln[wecare_common_vars])
-
-common_wecare_genotypes.mx <- wecare_genotypes.mx[wecare_common_vars,]
-dim(common_wecare_genotypes.mx)
-common_wecare_genotypes.mx[1:5,1:5]
-
-common_wecare_variants.df <- wecare_variants.df[wecare_common_vars,]
-dim(common_wecare_variants.df)
-common_wecare_variants.df[1:5,1:5]
-
-common_wecare_kgen.df <- wecare_kgen.df[wecare_common_vars,]
-dim(common_wecare_kgen.df)
-common_wecare_kgen.df[1:5,1:5]
-
-common_wecare_exac.df <- wecare_exac.df[wecare_common_vars,]
-dim(common_wecare_exac.df)
-common_wecare_exac.df[1:5,1:5]
-
-# --- Calculate eigenvectors --- #
-
-common_wecare_eigen <- normalise_and_calculate_eigenvectors.udf(common_wecare_genotypes.mx)
-
-wecare_common_variants_eigenvectors.df <- as.data.frame(common_wecare_eigen$vectors) # eigenvectors in columns
-wecare_common_variants_eigenvalues <- common_wecare_eigen$values
-
-# --- Prepare data for plotting --- #
-
-data2plot.df <- cbind(cases_IDs, cases_labels, wecare_common_variants_eigenvectors.df[,1:3])
-colnames(data2plot.df) <- c("wes_id", "group", "ev1", "ev2", "ev3")
-
-# --- Plot eig1 vs eig2 --- #
-
-g <- ggplot(data2plot.df, aes(-ev1, ev2)) +
-  geom_point(aes(colour=group, fill=group, text = wes_id)) + 
-  labs(title="wecare common variants<br>(44,517 x 480)", x ="-eigenvector1", y = "eigenvector2") +
-  userColourScale
-
-ggplotly(g)
-
-# --- Plot eig2 vs eig3 --- #
-
-g <- ggplot(data2plot.df, aes(ev2, ev3)) +
-  geom_point(aes(colour=group, fill=group, text = wes_id)) + 
-  labs(title="wecare common variants<br>(44,517 x 480)", x ="eigenvector2", y = "eigenvector3") +
-  userColourScale
-
-ggplotly(g)
-
-# --- Clean-up --- #
-
-rm(wecare_common_variants_eigenvectors.df, wecare_common_variants_eigenvalues, g, data2plot.df, 
-   cases_labels, cases_IDs, colours, userColourScale, wecare_common_vars, 
-   ac_wecare_cln, an_wecare_cln, af_wecare_cln, 
-   get_allele_number.udf, normalise_and_calculate_eigenvectors.udf)
-
-```
-
-# export_wecare_common_variants_to_EIGENSTRAT_format
-
-```{r export_wecare_common_variants_to_EIGENSTRAT_format}
-
-# --- make snp file --- #
-
-# Extract data from variants table
-wecare_common_variants_snp.df <- common_wecare_variants.df %>% 
-  mutate(morgan = POS / 1000000) %>%  
-  select(SplitVarID, CHROM, morgan, POS, REF, ALT)
-
-# Recode CRHOM data
-summary(wecare_common_variants_snp.df$CHROM)
-
-str(wecare_common_variants_snp.df)
-wecare_common_variants_snp.df$CHROM <- as.vector(wecare_common_variants_snp.df$CHROM)
-str(wecare_common_variants_snp.df)
-
-"23" -> wecare_common_variants_snp.df[wecare_common_variants_snp.df$CHROM == "X", "CHROM"]
-"24" -> wecare_common_variants_snp.df[wecare_common_variants_snp.df$CHROM == "Y", "CHROM"]
-"90" -> wecare_common_variants_snp.df[wecare_common_variants_snp.df$CHROM == "MT", "CHROM"]
-
-wecare_common_variants_snp.df$CHROM <- as.factor(wecare_common_variants_snp.df$CHROM)
-summary(wecare_common_variants_snp.df$CHROM)
-
-# Write file (tab-separated)
-write.table(wecare_common_variants_snp.df, 
-            paste(interim_data_folder, "wecare_common_variants.snp", sep="/"), 
-            quote=FALSE, sep="\t", 
-            row.names=FALSE, col.names=FALSE) 
-
-# --- make geno file --- #
-
-# Get data from genotypes matrix
-wecare_common_variants_geno.mx <- common_wecare_genotypes.mx
-
-# Recode NA
-9 -> wecare_common_variants_geno.mx[is.na(wecare_common_variants_geno.mx)] # NA is coded as 9
-
-# Write file (no delimiters)
-write.table(wecare_common_variants_geno.mx, 
-            paste(interim_data_folder, "wecare_common_variants.geno", sep="/"),             
-            quote=FALSE, sep="", 
-            row.names=FALSE, col.names=FALSE)
-
-# --- make ind file --- #
-# has been made for wecare all variants
-
-# Clean-up
-rm(wecare_common_variants_snp.df, wecare_common_variants_geno.mx)
-
-```
-
-# compare_eigenvalues_and_eigenvectors_in_all_and_common_variants
-
-```{r compare_eigenvalues_and_eigenvectors_in_all_and_common_variants}
-
-# --- Compare eigenvalues --- #
-
-eval_all <- wecare_eigen$values
-eval_common <- common_wecare_eigen$values
-
-plot(eval_all, main="Wecare eigenvalues (all variants)")
-plot(eval_common, main="Wecare igenvalues (common variants)")
-plot(eval_all,eval_common, main="Wecare eigenvalues (all vs common variants)")
-
-# --- Compare eigenvectors --- #
-
-# Gather data
-ev1_all <- wecare_eigen$vectors[,1]
-ev1_common <- common_wecare_eigen$vectors[,1]
-ev2_all <- wecare_eigen$vectors[,2]
-ev2_common <- common_wecare_eigen$vectors[,2]
-ev3_all <- wecare_eigen$vectors[,3]
-ev3_common <- common_wecare_eigen$vectors[,3]
-
-data2plot.df <- as.data.frame(cbind(ev1_all, ev2_all, ev3_all, ev1_common, ev2_common, ev3_common))
-
-# Calculate correlations
-cor.test(ev1_all, ev1_common) # -0.482982, p-value = 2.2e-16
-cor.test(ev2_all, ev2_common) # -0.2196824, p-value = 1.174e-06
-cor.test(ev3_all, ev3_common) # -0.06442268, p-value = 0.1588
-
-# Common sence check (these eigenvectors should be orthogonal...)
-cor.test(ev1_all, ev2_all) # -3.530534e-16, p-value = 1
-cor.test(ev1_common, ev2_common) # -6.391521e-16, p-value = 1
-
-# Make plots
-g <- ggplot(data2plot.df, aes(ev1_all, ev1_common)) +
-  geom_point() + 
-  labs(title="Wecare eigenvector 1<br>all vs common variants (p=2e-16)")
-ggplotly(g)
-
-g <- ggplot(data2plot.df, aes(ev2_all, ev2_common)) +
-  geom_point() + 
-  labs(title="Wecare eigenvector 2<br>all vs common variants (p=1e-06)")
-ggplotly(g)
-
-g <- ggplot(data2plot.df, aes(ev3_all, ev3_common)) +
-  geom_point() + 
-  labs(title="Wecare eigenvector 3<br>all vs common variants (p=0.16)")
-ggplotly(g)
-
-# Clean-up
-rm(eval_all, eval_common, ev1_all, ev2_all, ev3_all, ev1_common, ev2_common, ev3_common, g, data2plot.df)
+rm(wecare_snp.df, wecare_geno.mx, wecare_ind.mx, samples, gender, group)
 
 ```
 
@@ -573,35 +376,6 @@ rm(eval_all, eval_common, ev1_all, ev2_all, ev3_all, ev1_common, ev2_common, ev3
 ```{r data_summary}
 
 ls()
-
-# --- wecare nfe --- #
-
-dim(wecare_nfe_genotypes.mx)
-class(wecare_nfe_genotypes.mx)
-wecare_nfe_genotypes.mx[1:5,1:5]
-
-dim(wecare_nfe_phenotypes.df)
-str(wecare_nfe_phenotypes.df)
-wecare_nfe_phenotypes.df[1:5,1:5]
-
-dim(wecare_nfe_variants.df)
-colnames(wecare_nfe_variants.df)
-wecare_nfe_variants.df[1:5,1:5]
-
-dim(wecare_nfe_kgen.df)
-colnames(wecare_nfe_kgen.df)
-wecare_nfe_kgen.df[1:5,1:5]
-
-dim(wecare_nfe_exac.df)
-colnames(wecare_nfe_exac.df)
-wecare_nfe_exac.df[1:5,1:5]
-
-sum(colnames(wecare_nfe_genotypes.mx) != rownames(wecare_nfe_phenotypes.df))
-sum(rownames(wecare_nfe_genotypes.mx) != rownames(wecare_nfe_variants.df))
-sum(rownames(wecare_nfe_genotypes.mx) != rownames(wecare_nfe_kgen.df))
-sum(rownames(wecare_nfe_genotypes.mx) != rownames(wecare_nfe_exac.df))
-
-# --- wecare only all variants --- #
 
 dim(wecare_genotypes.mx)
 class(wecare_genotypes.mx)
@@ -623,37 +397,12 @@ dim(wecare_exac.df)
 colnames(wecare_exac.df)
 wecare_exac.df[1:5,1:5]
 
+str(wecare.eigen)
+
 sum(colnames(wecare_genotypes.mx) != rownames(wecare_phenotypes.df))
 sum(rownames(wecare_genotypes.mx) != rownames(wecare_variants.df))
 sum(rownames(wecare_genotypes.mx) != rownames(wecare_kgen.df))
 sum(rownames(wecare_genotypes.mx) != rownames(wecare_exac.df))
-
-# --- wecare only common variants --- #
-
-dim(common_wecare_genotypes.mx)
-class(common_wecare_genotypes.mx)
-common_wecare_genotypes.mx[1:5,1:5]
-
-dim(wecare_phenotypes.df) # same as in rare
-str(wecare_phenotypes.df)
-wecare_phenotypes.df[1:5,1:5]
-
-dim(common_wecare_variants.df)
-colnames(common_wecare_variants.df)
-common_wecare_variants.df[1:5,1:5]
-
-dim(common_wecare_kgen.df)
-colnames(common_wecare_kgen.df)
-common_wecare_kgen.df[1:5,1:5]
-
-dim(common_wecare_exac.df)
-colnames(common_wecare_exac.df)
-common_wecare_exac.df[1:5,1:5]
-
-sum(colnames(common_wecare_genotypes.mx) != rownames(wecare_phenotypes.df))
-sum(rownames(common_wecare_genotypes.mx) != rownames(common_wecare_variants.df))
-sum(rownames(common_wecare_genotypes.mx) != rownames(common_wecare_kgen.df))
-sum(rownames(common_wecare_genotypes.mx) != rownames(common_wecare_exac.df))
 
 ```
 
