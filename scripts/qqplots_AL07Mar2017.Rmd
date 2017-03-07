@@ -1,0 +1,125 @@
+---
+title: "qq plots"
+author: "AL"
+date: "March 7, 2017"
+output: html_document
+---
+
+# read_and_sort_results_table
+
+```{r read_and_sort_results_table}
+
+# Read results
+results_folder <- "/scratch/medgen/scripts/wecare_stat_01.17/results"
+
+results.df <- read.table(paste(results_folder, "s08a_matched_analysis_wecare_only_jan2017.txt", sep="/"), header = TRUE)
+dim(results.df)
+str(results.df)
+
+summary(as.factor(results.df$multilaalelic_varaints))
+# FALSE  TRUE 
+#  8463   303 
+
+summary(as.factor(results.df$inverted_afs))
+# FALSE  TRUE 
+#  8618   148 
+
+summary(as.factor(results.df$clogit_mode))
+#  approximate  failed_anova failed_clogit      standard 
+#          601            19            45          8,101 
+
+summary(as.factor(results.df$glm_mode)) 
+# standard: 8,766
+
+# ------------ Compare P values ------------ #
+
+mean(results.df$p_clogit, na.rm=TRUE)
+mean(results.df$p_clogit_anova, na.rm=TRUE)
+mean(results.df$p_glm)
+mean(results.df$p_glm_lrt)
+
+colours <- as.vector(results.df$clogit_mode)
+"black" -> colours[colours == "standard"]
+"red" -> colours[colours == "approximate"]
+"green" -> colours[colours == "failed_clogit"]
+"green" -> colours[colours == "failed_anova"]
+
+plot(p_glm_lrt ~ p_clogit_anova, data=results.df,
+     col=colours, main="glm_lrt vs clogit_anova")
+abline(a=0, b=1, col="blue", lwd=3)
+legend("bottomright", inset=.05, 
+       title="clogit mode:",
+       c("standard", "approximate"), 
+       fill=c("black", "red"),
+       horiz = TRUE)
+
+plot(p_clogit ~ p_clogit_anova, data=results.df, 
+     col=colours, main="p_clogit vs clogit_anova")
+abline(a=0, b=1, col="blue", lwd=3)
+legend("bottomright", inset=.05, 
+       title="clogit mode:",
+       c("standard", "approximate"), 
+       fill=c("black", "red"),
+       horiz = TRUE)
+
+plot(p_glm ~ p_glm_lrt, data=results.df, 
+     col=colours, main="p_glm vs p_glm_lrt")
+abline(a=0, b=1, col="blue", lwd=3)
+legend("bottomright", inset=.05, 
+       title="clogit mode:",
+       c("standard", "approximate", "failed"), 
+       fill=c("black", "red", "green"),
+       horiz = TRUE)
+
+# ---------------- qq plots ---------------- #
+
+# http://genome.sph.umich.edu/wiki/Code_Sample:_Generating_QQ_Plots_in_R
+# http://www.gettinggeneticsdone.com/2014/05/qqman-r-package-for-qq-and-manhattan-plots-for-gwas-results.html 
+
+x <- as.numeric(results.df$p_glm_lrt)
+
+# --- qqnorm function --- #
+
+# plots against NORMAL
+# (NOT against expected!)
+
+qqnorm(-log10(x),main="Normal QQ plot \n(-log10(p_glm_lrt))")
+qqline(-log10(x), col="red", lwd=3)
+quantile(-log10(x))
+
+# explore qqnorm
+x <- seq(0.00001,1,0.00001)
+qqnorm(-log10(x), main="Normal QQ plot \n(-log10(flat 0:1))")
+qqline(-log10(x), col="red", lwd=3)
+quantile(-log10(x))
+
+# proper qq plot in r-base
+# plots against EXPECTED
+
+exp.pvalues<-(rank(x, ties.method="first") + 0.5)/(length(x)+1)
+plot(-log10(exp.pvalues), -log10(x), 
+     ylab="-log10(obs.pvalues)",
+     xlim = c(0,4.5), ylim = c(0,4.5),
+     main="QQ plot for p_glm_lrt")
+abline(0,1,col="red")
+
+x <- as.numeric(results.df$p_clogit_anova[!is.na(results.df$p_clogit_anova)])
+exp.pvalues<-(rank(x, ties.method="first") + 0.5)/(length(x)+1) # note the flat expectation
+plot(-log10(exp.pvalues), -log10(x), 
+     ylab="-log10(obs.pvalues)",
+     xlim = c(0,4.5), ylim = c(0,4.5),
+     main="QQ plot \n(-log10(p_glm_lrt))")
+abline(0,1,col="red")
+
+#ggplot(results.df, aes(sample=p_glm_lrt)) +
+#  stat_qq()
+
+# Sort: yet-to-be-done
+results.df <- results.df[order(as.numeric((results.df$p_glm_lrt))), ] 
+
+# Save sorted
+write.table(results.df, 
+            file=paste(results_folder, "s08a_matched_analysis_wecare_only_jan2017.txt", sep="/"),
+            row.names = FALSE, quote=FALSE, sep="\t")
+
+```
